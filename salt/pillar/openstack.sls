@@ -5,27 +5,29 @@ default:
 
     release: train
 
-    password:
-      admin: hae5Oeru
-      cinder_db: ahsh0Imo
-      cinder: fieng4Sh
-      dash: WeeWer1e
-      demo: AepeVae0
-      glance_db: Neegah7l
-      glance: Oozoo8bo
-      keystone_db: PahShup6
-      keystone: uJeefai3
-      metadata: nohib1Oh
-      neutron_db: AiP0dehe
-      neutron: auja1Ofi
-      nova_db: uw5tho2I
-      nova: quooBoh8
-      placement: UX3eingu
-      rabbit: Nahj8wai
+    passwords:
+
+      admin_pass: hae5Oeru
+      cinder_db_pass: ahsh0Imo
+      cinder_pass: fieng4Sh
+      dash_pass: WeeWer1e
+      demo_pass: AepeVae0
+      glance_db_pass: Neegah7l
+      glance_pass: Oozoo8bo
+      keystone_db_pass: PahShup6
+      keystone_pass: uJeefai3
+      metadata_pass: nohib1Oh
+      neutron_db_pass: AiP0dehe
+      neutron_pass: auja1Ofi
+      nova_db_pass: uw5tho2I
+      nova_pass: quooBoh8
+      placement_pass: UX3eingu
+      rabbit_pass: Nahj8wai
+      mysql_root_db_pass: Aeboob4u
 
 boneyard:
   base:
-    admin_network: 10.130.1.0/24
+    internal_network: 10.130.1.0/24
 
 {% endload %}
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}

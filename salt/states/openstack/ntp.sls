@@ -4,8 +4,10 @@
 default: {{ controllers|yaml }}
 
 controller:
-  - 10.5.48.8
-  - 10.5.48.9
+  - ntp.ubuntu.com
+  - 0.ubuntu.pool.ntp.org
+  - 1.ubuntu.pool.ntp.org
+  - 2.ubuntu.pool.ntp.org
 
 {% endload %}
 {% set ntp_servers = salt['grains.filter_by'](ntp_servers_map, grain='openstack:role', default='default') %}

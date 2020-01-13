@@ -3,6 +3,7 @@
 default:
   base:
 
+    internal_network: 10.0.0.0/8
     release: train
 
     passwords:
@@ -21,6 +22,7 @@ default:
       neutron_pass: auja1Ofi
       nova_db_pass: uw5tho2I
       nova_pass: quooBoh8
+      placement_db_pass: eike0aeY
       placement_pass: UX3eingu
       rabbit_pass: Nahj8wai
       mysql_root_db_pass: Aeboob4u
@@ -28,6 +30,10 @@ default:
 boneyard:
   base:
     internal_network: 10.130.1.0/24
+
+test:
+  base:
+    internal_network: 192.168.0.0/16
 
 {% endload %}
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}

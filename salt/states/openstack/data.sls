@@ -1,14 +1,41 @@
-# single controller
+# configures the databases needed for a single control plane, no HA
+# installs etcd, mariadb, memcached and rabbitmq
 
 {% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
 {% set internal_network = salt['pillar.get']('openstack:internal_network') %}
 
-{% if grains['id'] == controller %}
 {% set controller_ip = [] %}
 {% for ip in ips if salt['network.ip_in_subnet'](ip, internal_network) %}
   {% do controller_ip.append(ip) %}
 {% endfor %}
 {% set controller_ip = controller_ip|first %}
+
+# etcd
+openstack-etcd:
+
+  pkg.installed:
+    - name: etcd
+
+  file.managed:
+    - name: /etc/default/etcd
+    - contents: |
+        ETCD_NAME="controller"
+        ETCD_DATA_DIR="/var/lib/etcd"
+        ETCD_INITIAL_CLUSTER_STATE="new"
+        ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-01"
+        ETCD_INITIAL_CLUSTER="controller=http://{{ controller_ip }}:2380"
+        ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ controller_ip }}:2380"
+        ETCD_ADVERTISE_CLIENT_URLS="http://{{ controller_ip }}:2379"
+        ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
+        ETCD_LISTEN_CLIENT_URLS="http://{{ controller_ip }}:2379"
+
+  service.running:
+    - name: etcd
+    - enable: True
+    - watch:
+        - pkg: openstack-etcd
+        - file: openstack-etcd
+
 
 # db
 openstack-mysql:
@@ -29,7 +56,6 @@ openstack-mysql:
         max_connections = 4096
         collation-server = utf8_general_ci
         character-set-server = utf8
-
 
   service.running:
     - name: mysql
@@ -60,26 +86,6 @@ openstack-mysql-salt:
     - contents: |
         mysql.default_file: /etc/mysql/debian.cnf
 
-# mq
-openstack-message-queue:
-
-  pkg.installed:
-    - name: rabbitmq-server
-
-  cmd.run:
-    - name: |
-        rabbitmqctl add_user openstack $rabbit_pass
-        rabbitmqctl set_permissions openstack ".*" ".*" ".*"
-    - env: {{ salt['pillar.get']('openstack:passwords') }}
-    - onchanges:
-        - pkg: openstack-message-queue
-
-  service.running:
-    - name: rabbitmq-server
-    - enable: True
-    - watch:
-        - pkg: openstack-message-queue
-        - cmd: openstack-message-queue
 
 # memcached
 openstack-memcache:
@@ -102,31 +108,24 @@ openstack-memcache:
         - pkg: openstack-memcache
         - file: openstack-memcache
 
-# etcd
 
-openstack-etcd:
+# mq
+openstack-message-queue:
 
   pkg.installed:
-    - name: etcd
+    - name: rabbitmq-server
 
-  file.managed:
-    - name: /etc/default/etcd
-    - contents: |
-        ETCD_NAME="controller"
-        ETCD_DATA_DIR="/var/lib/etcd"
-        ETCD_INITIAL_CLUSTER_STATE="new"
-        ETCD_INITIAL_CLUSTER_TOKEN="etcd-cluster-01"
-        ETCD_INITIAL_CLUSTER="controller=http://{{ controller_ip }}:2380"
-        ETCD_INITIAL_ADVERTISE_PEER_URLS="http://{{ controller_ip }}:2380"
-        ETCD_ADVERTISE_CLIENT_URLS="http://{{ controller_ip }}:2379"
-        ETCD_LISTEN_PEER_URLS="http://0.0.0.0:2380"
-        ETCD_LISTEN_CLIENT_URLS="http://{{ controller_ip }}:2379"
+  cmd.run:
+    - name: |
+        rabbitmqctl add_user openstack $rabbit_pass
+        rabbitmqctl set_permissions openstack ".*" ".*" ".*"
+    - env: {{ salt['pillar.get']('openstack:passwords') }}
+    - onchanges:
+        - pkg: openstack-message-queue
 
   service.running:
-    - name: etcd
+    - name: rabbitmq-server
     - enable: True
     - watch:
-        - pkg: openstack-etcd
-        - file: openstack-etcd
-
-{% endif %}
+        - pkg: openstack-message-queue
+        - cmd: openstack-message-queue

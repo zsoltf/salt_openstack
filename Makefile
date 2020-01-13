@@ -1,3 +1,5 @@
+# sync salt to remote
+
 salt = frigate-4
 
 .PHONY: salt

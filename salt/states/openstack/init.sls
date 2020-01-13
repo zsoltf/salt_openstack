@@ -1,3 +1,4 @@
+# set up /etc/hosts
 {% set cluster_mine = salt['mine.get']('openstack:role', 'ip', 'grain') | dictsort() %}
 {% set openstack_network = salt['pillar.get']('openstack:internal_network') %}
 
@@ -14,6 +15,7 @@ openstack-etc_hosts_{{ name }}:
 {% endfor %}
 
 
+# package repo
 {% set release = salt['pillar.get']('openstack:release') %}
 
 openstack-pkgrepo-{{ release }}:
@@ -25,6 +27,11 @@ openstack-pkgrepo-{{ release }}:
     - file: /etc/apt/sources.list.d/cloudarchive-{{ release }}.list
 
 
+# openstack client
 openstack-python-client:
   pkg.installed:
     - name: python3-openstackclient
+
+# ntp
+include:
+  - .ntp

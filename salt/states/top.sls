@@ -7,7 +7,11 @@ base:
     - openstack
     - openstack.data
     - openstack.control.keystone
+    - openstack.control.placement
+    - openstack.control.glance
+    - openstack.control.dashboard
+    #- openstack.control.nova
 
-  'openstack:role:compute':
-    - match: grain
-    - openstack.compute
+  #'openstack:role:compute':
+  #  - match: grain
+  #  - openstack.compute.nova

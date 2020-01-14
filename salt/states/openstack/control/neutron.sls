@@ -4,6 +4,7 @@
 {% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
 {% set metadata_pass = salt['pillar.get']('openstack:passwords:metadata_pass') %}
 {% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
+{% set internal_network = salt['pillar.get']('openstack:internal_network') %}
 
 # TODO: make this more salty
 {% set interface_name = 'ens7' %}

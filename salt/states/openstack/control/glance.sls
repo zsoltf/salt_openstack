@@ -26,6 +26,14 @@ openstack-glance:
   pkg.installed:
     - name: glance
 
+openstack-glance-clear-comments:
+  cmd.run:
+    - name: |
+        sed -i /^#/d /etc/glance/glance-api.conf
+        sed -i /^$/d /etc/glance/glance-api.conf
+    - onchanges:
+      - pkg: openstack-glance
+
 openstack-glance-initial-config:
   ini.options_present:
     - name: /etc/glance/glance-api.conf
@@ -83,5 +91,6 @@ openstack-glance-cirros-image:
           --disk-format qcow2 --container-format bare --public \
           cirros
     - creates: /root/cirros-0.4.0-x86_64-disk.img
+    - cwd: /root
     - env:
         OS_CLOUD: test

@@ -1,23 +1,22 @@
 {% set neutron_pass = salt['pillar.get']('openstack:passwords:neutron_pass') %}
+#HACK
+{% set database = "mysql-s3" %}
 {% set neutron_db_pass = salt['pillar.get']('openstack:passwords:neutron_db_pass') %}
 {% set nova_pass = salt['pillar.get']('openstack:passwords:nova_pass') %}
 {% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
 {% set metadata_pass = salt['pillar.get']('openstack:passwords:metadata_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
-{% set internal_network = salt['pillar.get']('openstack:internal_network') %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
+{% set controller_ip = ips|first %}
 
-# TODO: make this more salty
-{% set interface_name = 'ens7' %}
+{% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
 
-{% set controller_ip = [] %}
-{% for ip in ips if salt['network.ip_in_subnet'](ip, internal_network) %}
-  {% do controller_ip.append(ip) %}
+{% set overlay_network = salt['pillar.get']('openstack:overlay_network') %}
+{% set overlay_interface_ip = [] %}
+# maybe try ip_addrs with cidr arg
+{% for ip in salt['network.ip_addrs']() if salt['network.ip_in_subnet'](ip, overlay_network) %}
+  {% do overlay_interface_ip.append(ip) %}
 {% endfor %}
-{% set controller_ip = controller_ip|first %}
-
-# the overlay interface ip
-# in this case it's the admin ip, but it could be something else
-{% set overlay_interface_ip = controller_ip %}
+{% set overlay_interface_ip = overlay_interface_ip|first %}
 
 openstack-neutron-db:
 
@@ -61,7 +60,7 @@ openstack-neutron-initial-config:
     - name: /etc/neutron/neutron.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://neutron:{{ neutron_db_pass }}@{{ controller }}/neutron'
+          connection: 'mysql+pymysql://neutron:{{ neutron_db_pass }}@{{ database }}/neutron'
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
@@ -113,7 +112,7 @@ openstack-neutron-linuxbridge-config:
     - name: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
     - sections:
         linux_bridge:
-          physical_interface_mappings: 'provider:{{ interface_name }}'
+          physical_interface_mappings: 'provider:{{ provider_interface }}'
         vxlan:
           enable_vxlan: 'true'
           local_ip: {{ overlay_interface_ip }}
@@ -150,13 +149,29 @@ openstack-neutron-metadata-config:
           nova_metadata_host: {{ controller }}
           metadata_proxy_shared_secret: {{ metadata_pass }}
 
+openstack-neutron-nova-config-controller:
+  ini.options_present:
+    - name: /etc/nova/nova.conf
+    - sections:
+        neutron:
+          auth_url: http://{{ controller }}:5000
+          auth_type: password
+          project_domain_name: default
+          user_domain_name: default
+          region_name: RegionOne
+          project_name: service
+          username: neutron
+          password: {{ neutron_pass }}
+          service_metadata_proxy: true
+          metadata_proxy_shared_secret: {{ metadata_pass }}
+
 # TODO: use native salt state
 openstack-neutron-bootstrap:
   cmd.run:
     - name: |
         openstack user create --domain default --password $neutron_pass neutron
         openstack role add --project service --user neutron admin
-        openstack service create --name glance --description "OpenStack Networking" network
+        openstack service create --name neutron --description "OpenStack Networking" network
         openstack endpoint create --region RegionOne network public http://{{ controller }}:9696
         openstack endpoint create --region RegionOne network internal http://{{ controller }}:9696
         openstack endpoint create --region RegionOne network admin http://{{ controller }}:9696

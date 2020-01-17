@@ -1,6 +1,6 @@
 # sync salt to remote
 
-salt = frigate-4
+salt = catboat
 
 .PHONY: salt
 salt: test/master.conf

@@ -2,15 +2,11 @@
 {% set placement_pass = salt['pillar.get']('openstack:passwords:placement_pass') %}
 {% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
 {% set nova_pass = salt['pillar.get']('openstack:passwords:nova_pass') %}
+#HACK
+{% set database = "mysql-s3" %}
 {% set nova_db_pass = salt['pillar.get']('openstack:passwords:nova_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
-{% set internal_network = salt['pillar.get']('openstack:internal_network') %}
-
-{% set controller_ip = [] %}
-{% for ip in ips if salt['network.ip_in_subnet'](ip, internal_network) %}
-  {% do controller_ip.append(ip) %}
-{% endfor %}
-{% set controller_ip = controller_ip|first %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
+{% set controller_ip = ips|first %}
 
 openstack-nova-db:
   mysql_database.present:
@@ -84,9 +80,9 @@ openstack-nova-initial-config:
         api:
           auth_strategy: keystone
         api_database:
-          connection: 'mysql+pymysql://nova:{{ nova_db_pass }}@{{ controller }}/nova_api'
+          connection: 'mysql+pymysql://nova:{{ nova_db_pass }}@{{ database }}/nova_api'
         database:
-          connection: 'mysql+pymysql://nova:{{ nova_db_pass }}@{{ controller }}/nova'
+          connection: 'mysql+pymysql://nova:{{ nova_db_pass }}@{{ database }}/nova'
         DEFAULT:
           transport_url: rabbit://openstack:{{ rabbit_pass }}@{{ controller }}:5672/
           my_ip: {{ controller_ip }}

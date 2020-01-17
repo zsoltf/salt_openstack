@@ -1,6 +1,7 @@
 # set up /etc/hosts
-{% set cluster_mine = salt['mine.get']('openstack:role', 'ip', 'grain') | dictsort() %}
-{% set openstack_network = salt['pillar.get']('openstack:internal_network') %}
+{% set cluster_mine = salt['mine.get']('openstack:role', 'admin_network', 'grain') | dictsort() %}
+{% set openstack_network = salt['pillar.get']('openstack:admin_network') %}
+{% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
 
 {% for name, ips in cluster_mine %}
 {% for ip in ips if salt['network.ip_in_subnet'](ip, openstack_network) %}
@@ -31,6 +32,20 @@ openstack-pkgrepo-{{ release }}:
 openstack-python-client:
   pkg.installed:
     - name: python3-openstackclient
+
+
+# provider interface
+openstack-provider-interface:
+  pkg.installed:
+    - name: ifupdown
+  file.managed:
+    - name: /etc/network/interfaces
+    - contents: |
+        auto {{ provider_interface }}
+        iface {{ provider_interface }} inet manual
+        up ip link set dev $IFACE up
+        down ip link set dev $IFACE down
+
 
 # ntp
 include:

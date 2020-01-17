@@ -2,12 +2,12 @@
 {% set placement_pass = salt['pillar.get']('openstack:passwords:placement_pass') %}
 {% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
 {% set nova_pass = salt['pillar.get']('openstack:passwords:nova_pass') %}
-{% set controller, _ = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
-{% set internal_network = salt['pillar.get']('openstack:internal_network') %}
+{% set controller, _ = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
 
+{% set admin_network = salt['pillar.get']('openstack:admin_network') %}
 {% set ips = salt['network.ip_addrs']() %}
 {% set compute_ip = [] %}
-{% for ip in ips if salt['network.ip_in_subnet'](ip, internal_network) %}
+{% for ip in ips if salt['network.ip_in_subnet'](ip, admin_network) %}
   {% do compute_ip.append(ip) %}
 {% endfor %}
 {% set compute_ip = compute_ip|first %}

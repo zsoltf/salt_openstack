@@ -1,7 +1,9 @@
 {% set glance_host = grains['id'] %}
 {% set glance_pass = salt['pillar.get']('openstack:passwords:glance_pass') %}
+#HACK
+{% set database = "mysql-s3" %}
 {% set glance_db_pass = salt['pillar.get']('openstack:passwords:glance_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
 
 openstack-glance-db:
 
@@ -39,7 +41,7 @@ openstack-glance-initial-config:
     - name: /etc/glance/glance-api.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://glance:{{ glance_db_pass }}@{{ controller }}/glance'
+          connection: 'mysql+pymysql://glance:{{ glance_db_pass }}@{{ database }}/glance'
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000

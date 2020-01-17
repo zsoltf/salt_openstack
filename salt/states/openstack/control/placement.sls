@@ -1,7 +1,9 @@
 {% set placement_host = grains['id'] %}
 {% set placement_pass = salt['pillar.get']('openstack:passwords:placement_pass') %}
+#HACK
+{% set database = "mysql-s3" %}
 {% set placement_db_pass = salt['pillar.get']('openstack:passwords:placement_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
 
 openstack-placement-db:
 
@@ -33,7 +35,7 @@ openstack-placement-initial-config:
         api:
           auth_strategy: keystone
         placement_database:
-          connection: 'mysql+pymysql://placement:{{ placement_db_pass }}@{{ controller }}/placement'
+          connection: 'mysql+pymysql://placement:{{ placement_db_pass }}@{{ database }}/placement'
         keystone_authtoken:
           auth_url: http://{{ controller }}:5000
           memcached_servers: {{ controller }}:11211

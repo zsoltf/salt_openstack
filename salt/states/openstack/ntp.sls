@@ -1,4 +1,4 @@
-{% set controllers = salt['mine.get']('openstack:role:controller', 'ip', 'grain') %}
+{% set controllers = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') %}
 {% load_yaml as ntp_servers_map %}
 
 default: {{ controllers|yaml }}

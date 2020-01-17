@@ -3,7 +3,7 @@
 default:
   base:
 
-    internal_network: 10.0.0.0/8
+    admin_network: 10.0.0.0/8
     release: train
 
     passwords:
@@ -25,15 +25,20 @@ default:
       placement_db_pass: eike0aeY
       placement_pass: UX3eingu
       rabbit_pass: Nahj8wai
-      mysql_root_db_pass: Aeboob4u
+      mysql_root_db_pass: 'jS5B*rjXWfjo'
 
 boneyard:
   base:
-    internal_network: 10.130.1.0/24
+    admin_network: 10.250.18.0/23
+    overlay_network: 10.130.1.0/24
+    provider_interface: eno3
+
+  openstack-t1*:
+    provider_interface: enp3s0f1
 
 test:
   base:
-    internal_network: 192.168.0.0/16
+    admin_network: 192.168.0.0/16
 
 {% endload %}
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}
@@ -41,3 +46,11 @@ test:
 
 openstack:
   {{ openstack|yaml }}
+
+mine_functions:
+  admin_network:
+    mine_function: network.ip_addrs
+    cidr: {{ openstack.admin_network }}
+  overlay_network:
+    mine_function: network.ip_addrs
+    cidr: {{ openstack.overlay_network }}

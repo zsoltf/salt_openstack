@@ -1,7 +1,9 @@
 {% set admin_pass = salt['pillar.get']('openstack:passwords:admin_pass') %}
 {% set keystone_host = grains['id'] %}
+#HACK
+{% set database = "mysql-s3" %}
 {% set keystone_db_pass = salt['pillar.get']('openstack:passwords:keystone_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'ip', 'grain') | dictsort() | first %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
 
 openstack-keystone-db:
 
@@ -31,7 +33,7 @@ openstack-keystone-initial-config:
     - name: /etc/keystone/keystone.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://keystone:{{ keystone_db_pass }}@{{ controller }}/keystone'
+          connection: 'mysql+pymysql://keystone:{{ keystone_db_pass }}@{{ database }}/keystone'
         token:
           provider: fernet
 

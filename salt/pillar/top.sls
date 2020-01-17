@@ -2,7 +2,7 @@ base:
 
   '*':
     - test
-    - ip-mine
+    - mine
 
   'datacenter:*':
     - match: grain

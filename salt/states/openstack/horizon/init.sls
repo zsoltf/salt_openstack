@@ -1,4 +1,4 @@
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
+{% from 'openstack/map.jinja' import controller, memcache with context %}
 
 openstack-dashboard:
   pkg.installed:
@@ -25,7 +25,7 @@ openstack-dashboard-config-3:
   file.replace:
     - name: /etc/openstack-dashboard/local_settings.py
     - pattern: '127.0.0.1:11211'
-    - repl: '{{ controller }}:11211'
+    - repl: '{{ memcache }}:11211'
 
 openstack-dashboard-config-4:
   file.replace:
@@ -33,3 +33,12 @@ openstack-dashboard-config-4:
     - append_if_not_found: True
     - pattern: ^DEFAULT_THEME = .*
     - repl: DEFAULT_THEME = 'default'
+
+openstack-dashboard-service:
+  service.running:
+    - name: apache2
+    - watch:
+      - file: openstack-dashboard-config-1
+      - file: openstack-dashboard-config-2
+      - file: openstack-dashboard-config-3
+      - file: openstack-dashboard-config-4

@@ -1,28 +1,5 @@
+{% from 'openstack/map.jinja' import database, memcache, controller, passwords with context %}
 {% set glance_host = grains['id'] %}
-{% set glance_pass = salt['pillar.get']('openstack:passwords:glance_pass') %}
-#HACK
-{% set database = "mysql-s3" %}
-{% set glance_db_pass = salt['pillar.get']('openstack:passwords:glance_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-
-openstack-glance-db:
-
-  mysql_database.present:
-    - name: glance
-
-  mysql_user.present:
-    - name: glance
-    - password: {{ glance_db_pass }}
-    - host: '%'
-
-  mysql_grants.present:
-    - user: glance
-    - grant: all privileges
-    - database: glance.*
-    - host: '%'
-    - require:
-        - mysql_database: openstack-glance-db
-        - mysql_user: openstack-glance-db
 
 openstack-glance:
   pkg.installed:
@@ -41,17 +18,17 @@ openstack-glance-initial-config:
     - name: /etc/glance/glance-api.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://glance:{{ glance_db_pass }}@{{ database }}/glance'
+          connection: 'mysql+pymysql://glance:{{ passwords.glance_db_pass }}@{{ database }}/glance'
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
-          memcached_servers: {{ controller }}:11211
+          memcached_servers: {{ memcache }}:11211
           auth_type: password
           project_domain_name: Default
           user_domain_name: Default
           project_name: service
           username: glance
-          password: {{ glance_pass }}
+          password: {{ passwords.glance_pass }}
         paste_deploy:
           flavor: keystone
         glance_store:
@@ -81,7 +58,7 @@ openstack-glance-bootstrap:
         openstack endpoint create --region RegionOne image admin http://{{ controller }}:9292
     - unless: openstack user show glance
     - env:
-        glance_pass: {{ glance_pass }}
+        glance_pass: {{ passwords.glance_pass }}
         OS_CLOUD: test
 
 # set up a cirros image

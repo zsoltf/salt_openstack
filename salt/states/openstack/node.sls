@@ -1,0 +1,4 @@
+include:
+  - openstack
+  - .client
+  - .network

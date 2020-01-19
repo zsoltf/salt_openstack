@@ -1,7 +1,8 @@
-{% set controllers = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') %}
+{% from 'openstack/map.jinja' import admin_network, controller_ip with context %}
+
 {% load_yaml as ntp_servers_map %}
 
-default: {{ controllers|yaml }}
+default: {{ controller_ip }}
 
 controller:
   - ntp.ubuntu.com
@@ -34,7 +35,7 @@ openstack-ntp-config:
         maxupdateskew 100.0
         rtcsync
         makestep 1 3
-        allow 10.0.0.0/24
+        allow {{ admin_network }}
 {% endif %}
 
 openstack-ntp-service:

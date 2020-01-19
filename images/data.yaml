@@ -1,0 +1,87 @@
+#cloud-config
+
+# prevent services from starting after install
+bootcmd:
+  - 'rm /etc/update-motd.d/10-help-text'
+  - 'rm /etc/update-motd.d/50-motd-news'
+  - 'echo "#!/bin/bash\nexit 101" > /usr/sbin/policy-rc.d'
+  - 'chmod +x /usr/sbin/policy-rc.d'
+  - 'systemctl disable systemd-resolved'
+  #- 'rm /etc/apt/apt.conf.d/50unattended-upgrades'
+  #- 'echo "nameserver {{ zone['resolvers']|join(' ') }}\nsearch {{ zone['dns_domain'] }}" > /etc/resolv.conf'
+  #- 'systemctl mask swap.target'
+  #- 'swapoff -a'
+
+#mounts:
+#  - [ swap ]
+#swap:
+#  size: 0
+
+hostname: stack-data-1
+
+apt:
+  http_proxy: "http://192.168.122.151:3142"
+  https_proxy: "DIRECT"
+  #primary:
+  #  - arches: [default]
+  #    search:
+  #      - "http://192.168.122.151:3142"
+  sources:
+    salt:
+      keyserver: "https://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2/SALTSTACK-GPG-KEY.pub"
+      keyid: "0E08A149DE57BFBE"
+      source: "deb http://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2 bionic main"
+    openstack:
+      source: "deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main"
+      keyid: "5EDB1B62EC4926EA"
+
+packages:
+  - openssh-server
+  - salt-minion
+  - ubuntu-cloud-keyring
+  - ifupdown
+
+write_files:
+  - path: /etc/update-motd.d/00-header
+    encoding: b64
+    content: |
+      IyEvYmluL3NoCgpbIC1yIC9ldGMvbHNiLXJlbGVhc2UgXSAmJiAuIC9ldGMvbHNiLXJlbGVhc2UK
+      CmlmIFsgLXogIiRESVNUUklCX0RFU0NSSVBUSU9OIiBdICYmIFsgLXggL3Vzci9iaW4vbHNiX3Jl
+      bGVhc2UgXTsgdGhlbgogICMgRmFsbCBiYWNrIHRvIHVzaW5nIHRoZSB2ZXJ5IHNsb3cgbHNiX3Jl
+      bGVhc2UgdXRpbGl0eQogIERJU1RSSUJfREVTQ1JJUFRJT049JChsc2JfcmVsZWFzZSAtcyAtZCkK
+      ZmkKCnByaW50ZiAiV2VsY29tZSB0byAlcyAoJXMgJXMgJXMpXG5cbiIgIiQoaG9zdG5hbWUpIiAi
+      JERJU1RSSUJfREVTQ1JJUFRJT04iICIkKHVuYW1lIC1vKSIgIiQodW5hbWUgLXIpIgoKZWNobyAn
+      ICAgICAgICAgICAgICAgfCAgICB8ICAgIHwKICAgICAgICAgICAgIClfKSAgKV8pICApXykKICAg
+      ICAgICAgICAgKV9fXykpX19fKSlfX18pXAogICAgICAgICAgIClfX19fKV9fX18pX19fX18pXFwK
+      ICAgICAgICAgX19fX198X19fX3xfX19ffF9fX19cXFxfXwotLS0tLS0tLS1cICAgICAgICAgICAg
+      ICAgICAgIC8tLS0tLS0tLS0KICBeXl5eXiBeXl5eXl5eXl5eXl5eXl5eXl5eXl4KICAgIF5eXl4g
+      ICAgICBeXl5eICAgICBeXl4gICAgXl4KICAgICAgICAgXl5eXiAgICAgIF5eXicK
+  - path: /etc/salt/minion.d/master.conf
+    content: |
+      master: 192.168.122.151
+      log_level: info
+  - path: /etc/salt/grains
+    content: |
+      app: openstack
+      datacenter: test
+      openstack:
+        role:
+          - etcd
+          - memcache
+          - mq
+          - sql
+
+disable_root: false
+users:
+  - name: zsolt
+    groups: adm,sudo
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    shell: /bin/bash
+    ssh_authorized_keys: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgZCoDQ3sfapjoPTnnoEIJS86IHlFRlfuyqmvs1yRWQQZ0tqJQ2rtaHY6SqjhA5HEsXdJzwtFcf9BjNj2coYSNNIGp18tan0PMHpC6VvTQQBVlBQHt4cTwu6UjeeTl+5Ag4jo5EVJ8bh2MXdk9i95rzZl8czvA5dHxqaip6n75CR5oYtEU92Sa7wRcgf8poxA+uTyjGUV2ZuYKPSFSTdeOQkjiNlXUhQYNNvyXkKkeXs627bu78uxp9ZnNa1umZ87zyP16t0S55U1ATghZx3EQWQ1pH8cm9TZX/Wbv298WunV+S93/+upLqVsrArYWIEhd0FMRc5hkeNEktWKncBkrI/+75w3PsZo02UQMsnjcIFZKQHqsvgtuFDxX8YbhNurB7UXaIob0anDuPgHWSvauNSu6cH5Hxo2vCCAsukkSMrHomV+zVndqMrmSAiYjrBQzj3XwmU/lHtgXFFHhzIUZSiC5MtHw7KxLvUFLLDCVWq9F+Q42a87/JB43QmlEe3M= zsolt@hyperion
+
+
+final_message: "Is this thing on? $UPTIME"
+
+power_state:
+  mode: poweroff

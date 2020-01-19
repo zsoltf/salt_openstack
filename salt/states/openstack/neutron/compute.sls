@@ -1,11 +1,5 @@
-{% set neutron_pass = salt['pillar.get']('openstack:passwords:neutron_pass') %}
-{% set metadata_pass = salt['pillar.get']('openstack:passwords:metadata_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-{% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
+{% from 'openstack/map.jinja' import overlay_network, provider_interface, database, memcache, mq, controller, passwords with context %}
 
-{% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
-
-{% set overlay_network = salt['pillar.get']('openstack:overlay_network') %}
 {% set overlay_interface_ip = [] %}
 # maybe try ip_addrs with cidr arg
 {% for ip in salt['network.ip_addrs']() if salt['network.ip_in_subnet'](ip, overlay_network) %}
@@ -13,7 +7,7 @@
 {% endfor %}
 {% set overlay_interface_ip = overlay_interface_ip|first %}
 
-openstack-neutron:
+openstack-compute-neutron:
   pkg.installed:
     - name: neutron-linuxbridge-agent
 
@@ -29,9 +23,9 @@ openstack-neutron-nova-config:
           region_name: RegionOne
           project_name: service
           username: neutron
-          password: {{ neutron_pass }}
+          password: {{ passwords.neutron_pass }}
           service_metadata_proxy: true
-          metadata_proxy_shared_secret: {{ metadata_pass }}
+          metadata_proxy_shared_secret: {{ passwords.metadata_pass }}
 
 openstack-neutron-compute-config:
   ini.options_present:
@@ -40,16 +34,16 @@ openstack-neutron-compute-config:
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
-          memcached_servers: {{ controller }}:11211
+          memcached_servers: {{ memcache }}:11211
           auth_type: password
           project_domain_name: Default
           user_domain_name: Default
           project_name: service
           username: neutron
-          password: {{ neutron_pass }}
+          password: {{ passwords.neutron_pass }}
         DEFAULT:
           auth_strategy: keystone
-          transport_url: rabbit://openstack:{{ rabbit_pass }}@{{ controller }}
+          transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}
           core_plugin: ml2
           service_plugins: router
           allow_overlapping_ips: 'true'

@@ -3,7 +3,11 @@
 default:
   base:
 
-    admin_network: 10.0.0.0/8
+    admin_network: 192.168.122.0/24
+    overlay_network: 10.1.1.0/24
+    overlay_interface: enp3s0
+    provider_interface: enp2s0
+
     release: train
 
     passwords:
@@ -44,13 +48,35 @@ test:
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}
 {% set openstack = salt['grains.filter_by'](overrides, grain='id', base='base') %}
 
+# main pillar
+
 openstack:
   {{ openstack|yaml }}
 
+
+# overrides
+
+# network mines
 mine_functions:
   admin_network:
     mine_function: network.ip_addrs
-    cidr: {{ openstack.admin_network }}
+    cidr: {{ openstack['admin_network'] }}
   overlay_network:
     mine_function: network.ip_addrs
-    cidr: {{ openstack.overlay_network }}
+    cidr: {{ openstack['overlay_network'] }}
+
+# virt profiles
+virt:
+  disk:
+    ceph:
+      - data:
+          size: 30720
+  nic:
+    default:
+      eth0:
+        bridge: br0
+        model: virtio
+    neutron:
+      eth0:
+        bridge: br0
+        model: virtio

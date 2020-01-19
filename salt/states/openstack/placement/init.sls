@@ -1,28 +1,5 @@
+{% from 'openstack/map.jinja' import memcache, database, controller, passwords with context %}
 {% set placement_host = grains['id'] %}
-{% set placement_pass = salt['pillar.get']('openstack:passwords:placement_pass') %}
-#HACK
-{% set database = "mysql-s3" %}
-{% set placement_db_pass = salt['pillar.get']('openstack:passwords:placement_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-
-openstack-placement-db:
-
-  mysql_database.present:
-    - name: placement
-
-  mysql_user.present:
-    - name: placement
-    - password: {{ placement_db_pass }}
-    - host: '%'
-
-  mysql_grants.present:
-    - user: placement
-    - grant: all privileges
-    - database: placement.*
-    - host: '%'
-    - require:
-        - mysql_database: openstack-placement-db
-        - mysql_user: openstack-placement-db
 
 openstack-placement:
   pkg.installed:
@@ -35,16 +12,16 @@ openstack-placement-initial-config:
         api:
           auth_strategy: keystone
         placement_database:
-          connection: 'mysql+pymysql://placement:{{ placement_db_pass }}@{{ database }}/placement'
+          connection: 'mysql+pymysql://placement:{{ passwords.placement_db_pass }}@{{ database }}/placement'
         keystone_authtoken:
           auth_url: http://{{ controller }}:5000
-          memcached_servers: {{ controller }}:11211
+          memcached_servers: {{ memcache }}:11211
           auth_type: password
           project_domain_name: Default
           user_domain_name: Default
           project_name: service
           username: placement
-          password: {{ placement_pass }}
+          password: {{ passwords.placement_pass }}
 
 openstack-placement-bootstrap-db:
   cmd.run:
@@ -66,5 +43,6 @@ openstack-placement-bootstrap:
         openstack endpoint create --region RegionOne placement admin http://{{ controller }}:8778
     - unless: openstack user show placement
     - env:
-        placement_pass: {{ placement_pass }}
+        placement_pass: {{ passwords.placement_pass }}
         OS_CLOUD: test
+

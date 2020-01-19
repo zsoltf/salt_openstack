@@ -1,16 +1,5 @@
+{% from 'openstack/map.jinja' import admin_ip, controller, memcache, mq, passwords with context %}
 {% set nova_host = grains['id'] %}
-{% set placement_pass = salt['pillar.get']('openstack:passwords:placement_pass') %}
-{% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
-{% set nova_pass = salt['pillar.get']('openstack:passwords:nova_pass') %}
-{% set controller, _ = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-
-{% set admin_network = salt['pillar.get']('openstack:admin_network') %}
-{% set ips = salt['network.ip_addrs']() %}
-{% set compute_ip = [] %}
-{% for ip in ips if salt['network.ip_in_subnet'](ip, admin_network) %}
-  {% do compute_ip.append(ip) %}
-{% endfor %}
-{% set compute_ip = compute_ip|first %}
 
 openstack-nova-compute:
   pkg.installed:
@@ -31,8 +20,8 @@ openstack-nova-compute-nova-config:
         api:
           auth_strategy: keystone
         DEFAULT:
-          transport_url: rabbit://openstack:{{ rabbit_pass }}@{{ controller }}:5672/
-          my_ip: {{ compute_ip }}
+          transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
+          my_ip: {{ admin_ip }}
           use_neutron: 'true'
           firewall_driver: 'nova.virt.firewall.NoopFirewallDriver'
           log_dir: ''
@@ -48,16 +37,16 @@ openstack-nova-compute-nova-config:
           user_domain_name: Default
           auth_url: http://{{ controller }}:5000/v3
           username: placement
-          password: {{ placement_pass }}
+          password: {{ passwords.placement_pass }}
         keystone_authtoken:
           auth_url: http://{{ controller }}:5000
-          memcached_servers: {{ controller }}:11211
+          memcached_servers: {{ memcache }}:11211
           auth_type: password
           project_domain_name: Default
           user_domain_name: Default
           project_name: service
           username: nova
-          password: {{ nova_pass }}
+          password: {{ passwords.nova_pass }}
         vnc:
           enabled: 'true'
           server_listen: '0.0.0.0'
@@ -77,3 +66,4 @@ openstack-nova-compute-service:
     - watch:
       - ini: openstack-nova-compute-initial-config
       - ini: openstack-nova-compute-nova-config
+

@@ -1,0 +1,12 @@
+<network>
+  <name>overlay</name>
+  <bridge name='virbr1' stp='on' delay='0'/>
+  <mac address='52:54:00:7e:bb:2e'/>
+  <domain name='overlay'/>
+  <ip address='10.1.1.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.1.1.128' end='10.1.1.254'/>
+    </dhcp>
+  </ip>
+</network>
+

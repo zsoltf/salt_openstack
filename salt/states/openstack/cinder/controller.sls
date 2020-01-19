@@ -1,37 +1,5 @@
-{% set rabbit_pass = salt['pillar.get']('openstack:passwords:rabbit_pass') %}
+{% from 'openstack/map.jinja' import admin_ip, mq, database, controller, memcache, passwords with context %}
 {% set cinder_host = grains['id'] %}
-{% set cinder_pass = salt['pillar.get']('openstack:passwords:cinder_pass') %}
-#HACK
-{% set database = "mysql-s3" %}
-{% set cinder_db_pass = salt['pillar.get']('openstack:passwords:cinder_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-
-{% set admin_network = salt['pillar.get']('openstack:admin_network') %}
-{% set ips = salt['network.ip_addrs']() %}
-{% set storage_ip = [] %}
-{% for ip in ips if salt['network.ip_in_subnet'](ip, admin_network) %}
-  {% do storage_ip.append(ip) %}
-{% endfor %}
-{% set storage_ip = storage_ip|first %}
-
-openstack-cinder-db:
-
-  mysql_database.present:
-    - name: cinder
-
-  mysql_user.present:
-    - name: cinder
-    - password: {{ cinder_db_pass }}
-    - host: '%'
-
-  mysql_grants.present:
-    - user: cinder
-    - grant: all privileges
-    - database: cinder.*
-    - host: '%'
-    - require:
-        - mysql_database: openstack-cinder-db
-        - mysql_user: openstack-cinder-db
 
 openstack-cinder:
   pkg.installed:
@@ -52,21 +20,21 @@ openstack-cinder-initial-config:
     - name: /etc/cinder/cinder.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://cinder:{{ cinder_db_pass }}@{{ database }}/cinder'
+          connection: 'mysql+pymysql://cinder:{{ passwords.cinder_db_pass }}@{{ database }}/cinder'
         DEFAULT:
           auth_strategy: keystone
-          transport_url: rabbit://openstack:{{ rabbit_pass }}@{{ controller }}:5672/
-          my_ip: {{ storage_ip }}
+          transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
+          my_ip: {{ admin_ip }}
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
-          memcached_servers: {{ controller }}:11211
+          memcached_servers: {{ memcache }}:11211
           auth_type: password
           project_domain_name: Default
           user_domain_name: Default
           project_name: service
           username: cinder
-          password: {{ cinder_pass }}
+          password: {{ passwords.cinder_pass }}
         oslo_concurrency:
           lock_path: /var/lib/cinder/tmp
 
@@ -93,7 +61,7 @@ openstack-cinder-bootstrap:
         openstack endpoint create --region RegionOne volumev3 admin http://{{ controller }}:8776/v3/%\(project_id\)s
     - unless: openstack user show cinder
     - env:
-        cinder_pass: {{ cinder_pass }}
+        cinder_pass: {{ passwords.cinder_pass }}
         OS_CLOUD: test
 
 openstack-cinder-bootstrap-db:
@@ -106,3 +74,4 @@ openstack-cinder-bootstrap-db:
     - onchanges:
         - ini: openstack-cinder-initial-config
         - cmd: openstack-cinder-bootstrap
+

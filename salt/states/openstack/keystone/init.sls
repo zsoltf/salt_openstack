@@ -1,28 +1,5 @@
-{% set admin_pass = salt['pillar.get']('openstack:passwords:admin_pass') %}
+{% from 'openstack/map.jinja' import database, controller, passwords with context %}
 {% set keystone_host = grains['id'] %}
-#HACK
-{% set database = "mysql-s3" %}
-{% set keystone_db_pass = salt['pillar.get']('openstack:passwords:keystone_db_pass') %}
-{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
-
-openstack-keystone-db:
-
-  mysql_database.present:
-    - name: keystone
-
-  mysql_user.present:
-    - name: keystone
-    - password: {{ keystone_db_pass }}
-    - host: '%'
-
-  mysql_grants.present:
-    - user: keystone
-    - grant: all privileges
-    - database: keystone.*
-    - host: '%'
-    - require:
-        - mysql_database: openstack-keystone-db
-        - mysql_user: openstack-keystone-db
 
 openstack-keystone:
   pkg.installed:
@@ -33,7 +10,7 @@ openstack-keystone-initial-config:
     - name: /etc/keystone/keystone.conf
     - sections:
         database:
-          connection: 'mysql+pymysql://keystone:{{ keystone_db_pass }}@{{ database }}/keystone'
+          connection: 'mysql+pymysql://keystone:{{ passwords.keystone_db_pass }}@{{ database }}/keystone'
         token:
           provider: fernet
 
@@ -48,7 +25,8 @@ openstack-keystone-bootstrap-identity-service:
           --bootstrap-internal-url http://{{ keystone_host }}:5000/v3/ \
           --bootstrap-public-url http://{{ keystone_host }}:5000/v3/ \
           --bootstrap-region-id RegionOne
-    - env: {{ salt['pillar.get']('openstack:passwords') }}
+    - env:
+        admin_pass: {{ passwords.admin_pass }}
     - onchanges:
         - ini: openstack-keystone-initial-config
 
@@ -77,7 +55,7 @@ openstack-admin-user-clouds-yaml:
           test:
             auth:
               username: 'admin'
-              password: {{ admin_pass }}
+              password: {{ passwords.admin_pass }}
               project_name: 'admin'
               auth_url: 'http://{{ controller }}:5000/v3'
               user_domain_name: Default

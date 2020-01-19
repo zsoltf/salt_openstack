@@ -1,0 +1,50 @@
+# variables
+
+{% set database = salt['mine.get']('openstack:role:sql', 'test.ping', 'grain') | first %}
+{% set etcd = salt['mine.get']('openstack:role:etcd', 'test.ping', 'grain') | first %}
+{% set memcache = salt['mine.get']('openstack:role:memcache', 'test.ping', 'grain') | first %}
+{% set mq = salt['mine.get']('openstack:role:mq', 'test.ping', 'grain') | first %}
+
+{% set release = salt['pillar.get']('openstack:release') %}
+
+{% set passwords = salt['pillar.get']('openstack:passwords') %}
+{% set controller, ips = salt['mine.get']('openstack:role:controller', 'admin_network', 'grain') | dictsort() | first %}
+{% set controller_ip = ips|first %}
+
+{% set admin_network = salt['pillar.get']('openstack:admin_network') %}
+{% set overlay_network = salt['pillar.get']('openstack:overlay_network') %}
+{% set overlay_interface = salt['pillar.get']('openstack:overlay_interface') %}
+{% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
+
+{% set admin_ip = [] %}
+# maybe try ip_addrs with cidr arg
+{% for ip in salt['network.ip_addrs']() if salt['network.ip_in_subnet'](ip, admin_network) %}
+  {% do admin_ip.append(ip) %}
+{% endfor %}
+{% set admin_ip = admin_ip|first %}
+
+
+# macros
+
+{% macro create_database(service, user, password) -%}
+
+openstack-{{ service }}-db:
+
+  mysql_database.present:
+    - name: {{ service }}
+
+  mysql_user.present:
+    - name: {{ user }}
+    - password: {{ password }}
+    - host: '%'
+
+  mysql_grants.present:
+    - user: {{ user }}
+    - grant: all privileges
+    - database: {{ service }}.*
+    - host: '%'
+    - require:
+        - mysql_database: openstack-{{ service }}-db
+        - mysql_user: openstack-{{ service}}-db
+
+{%- endmacro %}

@@ -1,4 +1,6 @@
-{% from 'openstack/map.jinja' import overlay_interface, provider_interface with context %}
+{% from 'openstack/map.jinja' import provider_interface with context %}
+
+# TODO: disable systemd-resolved
 
 # interfaces
 
@@ -13,13 +15,6 @@ openstack-provider-interface:
     - enable_ipv6: False
     - proto: manual
 
-{{ overlay_interface }}:
-  network.managed:
-    - enabled: True
-    - type: eth
-    - enable_ipv6: False
-    - proto: dhcp
-
 {{ provider_interface }}_start:
   file.append:
     - name: /etc/network/interfaces
@@ -27,5 +22,4 @@ openstack-provider-interface:
         up ip link set dev {{ provider_interface }} up
         down ip link set dev {{ provider_interface }} down
     - require:
-      - network: {{ overlay_interface }}
       - network: {{ provider_interface }}

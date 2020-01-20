@@ -5,7 +5,6 @@ default:
 
     admin_network: 192.168.122.0/24
     overlay_network: 10.1.1.0/24
-    overlay_interface: enp3s0
     provider_interface: enp2s0
 
     release: train
@@ -39,6 +38,12 @@ boneyard:
 
   openstack-t1*:
     provider_interface: enp3s0f1
+
+  carrier-1*:
+    provider_interface: eno2
+
+  carrier-3*:
+    provider_interface: enp2s0f1
 
 test:
   base:

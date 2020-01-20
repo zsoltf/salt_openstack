@@ -13,7 +13,6 @@
 
 {% set admin_network = salt['pillar.get']('openstack:admin_network') %}
 {% set overlay_network = salt['pillar.get']('openstack:overlay_network') %}
-{% set overlay_interface = salt['pillar.get']('openstack:overlay_interface') %}
 {% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
 
 {% set admin_ip = [] %}

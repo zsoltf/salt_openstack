@@ -6,16 +6,7 @@ bootcmd:
   - 'rm /etc/update-motd.d/50-motd-news'
   - 'echo "#!/bin/bash\nexit 101" > /usr/sbin/policy-rc.d'
   - 'chmod +x /usr/sbin/policy-rc.d'
-  - 'systemctl disable systemd-resolved'
-  #- 'rm /etc/apt/apt.conf.d/50unattended-upgrades'
-  #- 'echo "nameserver {{ zone['resolvers']|join(' ') }}\nsearch {{ zone['dns_domain'] }}" > /etc/resolv.conf'
-  #- 'systemctl mask swap.target'
-  #- 'swapoff -a'
-
-#mounts:
-#  - [ swap ]
-#swap:
-#  size: 0
+  - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1 8.8.8.8\nsearch openstacklocal" > /etc/resolv.conf'
 
 hostname: stack-control-1
 
@@ -44,6 +35,7 @@ packages:
 write_files:
   - path: /etc/update-motd.d/00-header
     encoding: b64
+    permission: '0755'
     content: |
       IyEvYmluL3NoCgpbIC1yIC9ldGMvbHNiLXJlbGVhc2UgXSAmJiAuIC9ldGMvbHNiLXJlbGVhc2UK
       CmlmIFsgLXogIiRESVNUUklCX0RFU0NSSVBUSU9OIiBdICYmIFsgLXggL3Vzci9iaW4vbHNiX3Jl
@@ -67,6 +59,10 @@ write_files:
       openstack:
         role:
           - controller
+          - etcd
+          - memcache
+          - mq
+          - sql
 
 disable_root: false
 users:

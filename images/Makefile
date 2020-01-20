@@ -1,8 +1,8 @@
 # images for testing
 
 .PHONY: all
-all: stack-data-1.img stack-control-1.img stack-compute-1.img
-start: data control compute
+all: stack-control-1.img stack-compute-1.img stack-storage-1.img
+start: control compute storage
 
 bionic-server-cloudimg-amd64.img:
 	@echo
@@ -34,15 +34,19 @@ stack-control-1.img: bionic.img controller.yaml
 	  --network network=overlay,model=virtio \
 	  --import
 
-stack-data-1.img: bionic.img data.yaml
-	cloud-localds data.iso data.yaml && \
-	cp bionic.img stack-data-1.img && \
+stack-storage-1.img: bionic.img storage.yaml
+	cloud-localds storage.iso storage.yaml && \
+	cp bionic.img stack-storage-1.img && \
 	virt-install \
-	  --name stack-data-1 \
+	  --name stack-storage-1 \
 	  --vcpus 2 \
 	  --memory 2048 \
-	  --disk stack-data-1.img,device=disk,bus=virtio,format=qcow2 \
-	  --disk data.iso,device=cdrom \
+	  --disk stack-storage-1.img,device=disk,bus=virtio,format=qcow2 \
+	  --disk storage.iso,device=cdrom \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-1,size=5 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-2,size=5 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-3,size=5 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-4,size=5 \
 	  --os-type linux \
 	  --os-variant ubuntu18.04 \
 	  --virt-type kvm \
@@ -77,9 +81,9 @@ control: stack-control-1.img
 compute: stack-compute-1.img
 	virsh start stack-compute-1
 
-.PHONY: data
-data: stack-data-1.img
-	virsh start stack-data-1
+.PHONY: storage
+storage: stack-storage-1.img
+	virsh start stack-storage-1
 
 .PHONY: virt_network
 virt_network: virt-host-network.xml virt-overlay-network.xml

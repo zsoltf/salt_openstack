@@ -10,7 +10,7 @@ openstack-cinder-clear-comments:
         sed -i /^#/d /etc/cinder/cinder.conf
         sed -i /^$/d /etc/cinder/cinder.conf
     - onchanges:
-      - pkg: openstack-cinder
+      - pkg: openstack-cinder-volume
 
 openstack-cinder-storage-config:
   ini.options_present:

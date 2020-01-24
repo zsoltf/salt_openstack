@@ -10,8 +10,8 @@ openstack-heat:
 openstack-heat-clear-comments:
   cmd.run:
     - name: |
-        sed -i /^#/d /etc/glance/glance-api.conf
-        sed -i /^$/d /etc/glance/glance-api.conf
+        sed -i /^#/d /etc/heat/heat.conf
+        sed -i /^$/d /etc/heat/heat.conf
     - onchanges:
       - pkg: openstack-heat
 

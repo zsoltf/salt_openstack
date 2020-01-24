@@ -52,6 +52,7 @@ create-sql-tables:
       - openstack.neutron.sql
       - openstack.nova.sql
       - openstack.cinder.sql
+      - openstack.heat.sql
     - require:
       - salt: sql-data-node
 
@@ -68,6 +69,7 @@ control-plane:
       - openstack.nova.controller
       - openstack.neutron.controller
       - openstack.cinder.controller
+      - openstack.heat
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

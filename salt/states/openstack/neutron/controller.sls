@@ -166,3 +166,16 @@ openstack-neutron-finalize:
     - onchanges:
       - cmd: openstack-neutron-bootstrap
 
+openstack-neutron-create-net:
+  cmd.run:
+    - name: |
+        openstack network create --share --external \
+          --provider-physical-network provider --provider-network-type flat boneyard
+        openstack subnet create --network boneyard \
+          --allocation-pool start=10.250.18.49,end=10.250.18.99 \
+          --dns-nameserver 10.5.48.8 --gateway 10.250.18.1 \
+          --subnet-range 10.250.18.0/23 boneyard
+    - env:
+        OS_CLOUD: test
+    - onchanges:
+      - cmd: openstack-neutron-finalize

@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import admin_ip, mq, database, controller, memcache, passwords with context %}
+{% from 'openstack/map.jinja' import ceph_secret_uuid, ceph_client_cinder_key, admin_ip, mq, database, controller, memcache, passwords with context %}
 {% set cinder_host = grains['id'] %}
 
 openstack-cinder:
@@ -6,6 +6,13 @@ openstack-cinder:
     - names:
         - cinder-api
         - cinder-scheduler
+
+openstack-cinder-ceph-packages:
+  pkg.installed:
+    - names:
+        - ceph-common
+        - python3-rbd
+        - python3-rados
 
 openstack-cinder-clear-comments:
   cmd.run:
@@ -25,6 +32,10 @@ openstack-cinder-initial-config:
           auth_strategy: keystone
           transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
           my_ip: {{ admin_ip }}
+          default_volume_type: ceph
+          enabled_backends: ceph
+          scheduler_default_filters: DriverFilter
+          glance_api_version: 2
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
@@ -37,13 +48,28 @@ openstack-cinder-initial-config:
           password: {{ passwords.cinder_pass }}
         oslo_concurrency:
           lock_path: /var/lib/cinder/tmp
+        ceph:
+          volume_driver: cinder.volume.drivers.rbd.RBDDriver
+          volume_backend_name: ceph
+          rbd_pool: volumes
+          rbd_ceph_conf: /etc/ceph/ceph.conf
+          rbd_flatten_volume_from_snapshot: False
+          rbd_max_clone_depth: 5
+          rbd_store_chunk_size: 4
+          rados_connect_timeout: -1
+          rbd_user: cinder
+          rbd_secret_uuid: {{ ceph_secret_uuid }}
 
-openstack-cinder-nova-config-controller:
-  ini.options_present:
-    - name: /etc/nova/nova.conf
-    - sections:
-        cinder:
-          os_region_name: RegionOne
+
+openstack-cinder-ceph-secrets:
+  file.managed:
+    - name: /etc/ceph/ceph.client.cinder.keyring
+    - group: cinder
+    - mode: '0640'
+    - contents: |
+        [client.cinder]
+            key = {{ ceph_client_cinder_key }}
+
 
 # TODO: use native salt states
 openstack-cinder-bootstrap:
@@ -75,3 +101,12 @@ openstack-cinder-bootstrap-db:
         - ini: openstack-cinder-initial-config
         - cmd: openstack-cinder-bootstrap
 
+openstack-cinder-create-ceph-type:
+  cmd.run:
+    - name: |
+        openstack volume type create ceph && \
+        openstack volume type set ceph --property volume_backend_name=ceph
+    - env:
+        OS_CLOUD: test
+    - onchanges:
+        - cmd: openstack-cinder-bootstrap-db

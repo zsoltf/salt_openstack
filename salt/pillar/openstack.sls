@@ -29,6 +29,9 @@ default:
       placement_pass: UX3eingu
       rabbit_pass: Nahj8wai
       mysql_root_db_pass: 'jS5B*rjXWfjo'
+      heat_pass: aix3zieM
+      heat_admin_pass: kohDae8y
+      heat_db_pass: Ieh7Ohc5
 
 boneyard:
   base:

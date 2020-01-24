@@ -13,6 +13,7 @@ base:
     - openstack.nova.controller
     - openstack.neutron.controller
     - openstack.cinder.controller
+    - openstack.heat
 
   # message queue
   'openstack:role:mq':
@@ -37,6 +38,7 @@ base:
     - openstack.neutron.sql
     - openstack.nova.sql
     - openstack.cinder.sql
+    - openstack.heat.sql
 
   'openstack:role:compute':
     - match: grain

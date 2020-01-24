@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# cat salt2019.sh | ssh root@myhost 'bash -s'
+
 SALT=catboat
 DC=boneyard
 

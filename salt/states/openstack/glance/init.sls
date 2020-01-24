@@ -1,9 +1,15 @@
-{% from 'openstack/map.jinja' import database, memcache, controller, passwords with context %}
+{% from 'openstack/map.jinja' import ceph_client_glance_key, database, memcache, controller, passwords with context %}
 {% set glance_host = grains['id'] %}
 
 openstack-glance:
   pkg.installed:
     - name: glance
+
+openstack-glance-ceph-packages:
+  pkg.installed:
+    - names:
+        - python3-rbd
+        - python3-rados
 
 openstack-glance-clear-comments:
   cmd.run:
@@ -32,9 +38,25 @@ openstack-glance-initial-config:
         paste_deploy:
           flavor: keystone
         glance_store:
-          stores: file,http
-          default_store: file
-          filesystem_store_datadir: /var/lib/glance/images
+          #stores: file,http
+          stores: rbd
+          default_store: rbd
+          #filesystem_store_datadir: /var/lib/glance/images
+          rbd_store_pool: images
+          rbd_store_user: glance
+          rbd_store_ceph_conf: /etc/ceph/ceph.conf
+          rbd_store_chunk_size: 8
+        DEFAULT:
+          show_image_direct_url: True
+
+openstack-glance-ceph-secrets:
+  file.managed:
+    - name: /etc/ceph/ceph.client.glance.keyring
+    - group: glance
+    - mode: '0640'
+    - contents: |
+        [client.glance]
+          key = {{ ceph_client_glance_key }}
 
 openstack-glance-bootstrap-db:
   cmd.run:

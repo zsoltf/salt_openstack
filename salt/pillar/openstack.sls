@@ -5,7 +5,20 @@ default:
 
     admin_network: 192.168.122.0/24
     overlay_network: 10.1.1.0/24
+    # admin interface: enp1s0 (not managed)
     provider_interface: enp2s0
+    # overlay interface: enp3s0 (not managed)
+
+    provider_name: provider
+    external_net_name: external
+    external_net_type: flat
+    external_net_subnet: 192.168.100.0/24
+    external_net_gateway: 192.168.100.1
+    external_net_nameservers: 192.168.100.1
+    external_net_pool_start: 192.168.100.150
+    external_net_pool_end: 192.168.100.250
+
+    enable_ceph: False
 
     release: train
 
@@ -42,6 +55,16 @@ boneyard:
     admin_network: 10.250.18.0/23
     overlay_network: 10.130.1.0/24
     provider_interface: eno3
+    external_net_name: boneyard
+    external_net_subnet: 10.250.18.0/23
+    external_net_gateway: 10.250.18.1
+    external_net_nameservers: 10.5.48.8
+    external_net_pool_start: 10.250.18.49
+    external_net_pool_end: 10.250.18.99
+    enable_ceph: True
+    ceph_client_glance_key: 'AQA8gydeucSYJBAAzBagGj0/ewVAY7y+FuP2ww=='
+    ceph_client_cinder_key: 'AQBTgydeTX4WGxAAmQcLitmivqUuRCGPnrQWrw=='
+    ceph_secret_uuid: 'cd609bed-350c-44cd-b2a9-c8d13834852b'
 
   openstack-t1*:
     provider_interface: enp3s0f1
@@ -55,6 +78,11 @@ boneyard:
 test:
   base:
     admin_network: 192.168.0.0/16
+  stack-storage*:
+    cinder_volumes:
+      - /dev/vdb
+      - /dev/vdc
+      - /dev/vdd
 
 {% endload %}
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}

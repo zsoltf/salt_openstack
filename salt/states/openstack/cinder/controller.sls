@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import ceph_secret_uuid, ceph_client_cinder_key, admin_ip, mq, database, controller, memcache, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_secret_uuid, ceph_client_cinder_key, admin_ip, mq, database, controller, memcache, passwords with context %}
 {% set cinder_host = grains['id'] %}
 
 openstack-cinder:
@@ -6,13 +6,6 @@ openstack-cinder:
     - names:
         - cinder-api
         - cinder-scheduler
-
-openstack-cinder-ceph-packages:
-  pkg.installed:
-    - names:
-        - ceph-common
-        - python3-rbd
-        - python3-rados
 
 openstack-cinder-clear-comments:
   cmd.run:
@@ -28,14 +21,6 @@ openstack-cinder-initial-config:
     - sections:
         database:
           connection: 'mysql+pymysql://cinder:{{ passwords.cinder_db_pass }}@{{ database }}/cinder'
-        DEFAULT:
-          auth_strategy: keystone
-          transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
-          my_ip: {{ admin_ip }}
-          default_volume_type: ceph
-          enabled_backends: ceph
-          scheduler_default_filters: DriverFilter
-          glance_api_version: 2
         keystone_authtoken:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
@@ -48,6 +33,15 @@ openstack-cinder-initial-config:
           password: {{ passwords.cinder_pass }}
         oslo_concurrency:
           lock_path: /var/lib/cinder/tmp
+        DEFAULT:
+          auth_strategy: keystone
+          transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
+          my_ip: {{ admin_ip }}
+{% if ceph %}
+          glance_api_version: 2
+          scheduler_default_filters: DriverFilter
+          default_volume_type: ceph
+          enabled_backends: ceph
         ceph:
           volume_driver: cinder.volume.drivers.rbd.RBDDriver
           volume_backend_name: ceph
@@ -60,6 +54,13 @@ openstack-cinder-initial-config:
           rbd_user: cinder
           rbd_secret_uuid: {{ ceph_secret_uuid }}
 
+openstack-cinder-ceph-packages:
+  pkg.installed:
+    - names:
+        - python-minimal
+        - ceph-common
+        - python3-rbd
+        - python3-rados
 
 openstack-cinder-ceph-secrets:
   file.managed:
@@ -69,7 +70,7 @@ openstack-cinder-ceph-secrets:
     - contents: |
         [client.cinder]
             key = {{ ceph_client_cinder_key }}
-
+{% endif %}
 
 # TODO: use native salt states
 openstack-cinder-bootstrap:
@@ -101,11 +102,16 @@ openstack-cinder-bootstrap-db:
         - ini: openstack-cinder-initial-config
         - cmd: openstack-cinder-bootstrap
 
-openstack-cinder-create-ceph-type:
+openstack-cinder-create-volume-type:
   cmd.run:
     - name: |
+      {% if ceph %}
         openstack volume type create ceph && \
         openstack volume type set ceph --property volume_backend_name=ceph
+      {% else %}
+        openstack volume type create lvm && \
+        openstack volume type set lvm --property volume_backend_name=lvm
+      {% endif %}
     - env:
         OS_CLOUD: test
     - onchanges:

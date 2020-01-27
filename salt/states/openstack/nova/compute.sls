@@ -1,15 +1,9 @@
-{% from 'openstack/map.jinja' import ceph_client_cinder_key, ceph_secret_uuid, admin_ip, controller, memcache, mq, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_client_cinder_key, ceph_secret_uuid, admin_ip, controller, memcache, mq, passwords with context %}
 {% set nova_host = grains['id'] %}
 
 openstack-nova-compute:
   pkg.installed:
     - name: nova-compute
-
-openstack-nova-ceph-packages:
-  pkg.installed:
-    - names:
-        - ceph-common
-        - python3-rbd
 
 openstack-nova-compute-clear-comments:
   cmd.run:
@@ -65,8 +59,16 @@ openstack-nova-compute-initial-config:
     - sections:
         libvirt:
           virt_type: qemu
+{% if ceph %}
           rbd_user: cinder
           rbd_secret_uuid: {{ ceph_secret_uuid }}
+
+openstack-nova-ceph-packages:
+  pkg.installed:
+    - names:
+        - python-minimal
+        - ceph-common
+        - python3-rbd
 
 openstack-nova-ceph-secret-xml:
   cmd.run:
@@ -84,6 +86,11 @@ openstack-nova-ceph-secret-xml:
         sudo virsh secret-set-value --secret {{ ceph_secret_uuid }} --base64 $(cat cinder.keyring)
         rm cinder.keyring secret.xml
     - unless: virsh secret-list | grep {{ ceph_secret_uuid }}
+{% endif %}
+
+openstack-nova-iscsi-service:
+  service.running:
+    - name: iscsid
 
 openstack-nova-compute-service:
   service.running:
@@ -91,3 +98,13 @@ openstack-nova-compute-service:
     - watch:
       - ini: openstack-nova-compute-initial-config
       - ini: openstack-nova-compute-nova-config
+
+openstack-nova-compute-restart:
+  cmd.run:
+    - name: |
+        service libvirtd restart
+        service iscsid restart
+        service nova-compute restart
+    - onchanges:
+        - ini: openstack-nova-compute-nova-config
+        - ini: openstack-nova-compute-initial-config

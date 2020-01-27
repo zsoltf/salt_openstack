@@ -92,3 +92,22 @@ openstack-nova-bootstrap-db:
     - onchanges:
         - ini: openstack-nova-initial-config
 
+openstack-nova-create-flavors:
+  cmd.run:
+    - name: |
+        openstack flavor create --id 0 --vcpus 1 --ram 64 --disk 1 m1.nano
+        openstack flavor create --id 1 --vcpus 1 --ram 512 --disk 4 m1.tiny
+        openstack flavor create --id 2 --vcpus 2 --ram 2048 --disk 4 m1.small
+        openstack flavor create --id 3 --vcpus 4 --ram 4096 --disk 8 m1.medium
+    - env:
+        OS_CLOUD: test
+    - unless: openstack flavor list | grep nano
+
+openstack-nova-create-root-public-key:
+  cmd.run:
+    - name: |
+        ssh-keygen -q -N "" -f /root/.ssh/id_rsa
+        openstack keypair create --public-key /root/.ssh/id_rsa.pub rootkey
+    - env:
+        OS_CLOUD: test
+    - unless: openstack keypair show rootkey

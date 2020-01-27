@@ -4,6 +4,7 @@
 {% set etcd = salt['mine.get']('openstack:role:etcd', 'test.ping', 'grain') | first %}
 {% set memcache = salt['mine.get']('openstack:role:memcache', 'test.ping', 'grain') | first %}
 {% set mq = salt['mine.get']('openstack:role:mq', 'test.ping', 'grain') | first %}
+{% set monitor = salt['mine.get']('openstack:role:monitor', 'test.ping', 'grain') | first %}
 
 {% set release = salt['pillar.get']('openstack:release') %}
 
@@ -14,6 +15,7 @@
 {% set admin_network = salt['pillar.get']('openstack:admin_network') %}
 {% set overlay_network = salt['pillar.get']('openstack:overlay_network') %}
 {% set provider_interface = salt['pillar.get']('openstack:provider_interface') %}
+{% set provider_name = salt['pillar.get']('openstack:provider_name') %}
 
 {% set admin_ip = [] %}
 # maybe try ip_addrs with cidr arg
@@ -22,15 +24,10 @@
 {% endfor %}
 {% set admin_ip = admin_ip|first %}
 
-{% set ceph_client_glance_key = 'AQA8gydeucSYJBAAzBagGj0/ewVAY7y+FuP2ww==' %}
-{% set ceph_client_cinder_key = 'AQBTgydeTX4WGxAAmQcLitmivqUuRCGPnrQWrw==' %}
-{% set ceph_secret_uuid = 'cd609bed-350c-44cd-b2a9-c8d13834852b' %}
-
-client.glance]
-[client.cinder]
-    key = AQBTgydeTX4WGxAAmQcLitmivqUuRCGPnrQWrw==
-[client.cinder-backup]
-
+{% set ceph = salt['pillar.get']('openstack:enable_ceph') %}
+{% set ceph_client_glance_key = salt['pillar.get']('openstack:ceph_client_glance_key') %}
+{% set ceph_client_cinder_key = salt['pillar.get']('openstack:ceph_client_cinder_key') %}
+{% set ceph_secret_uuid = salt['pillar.get']('openstack:ceph_secret_uuid') %}
 
 
 # macros

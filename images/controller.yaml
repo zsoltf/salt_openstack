@@ -2,21 +2,27 @@
 
 # prevent services from starting after install
 bootcmd:
-  - 'rm /etc/update-motd.d/10-help-text'
-  - 'rm /etc/update-motd.d/50-motd-news'
+  - '> /etc/update-motd.d/10-help-text'
+  - '> /etc/update-motd.d/50-motd-news'
   - 'echo "#!/bin/bash\nexit 101" > /usr/sbin/policy-rc.d'
   - 'chmod +x /usr/sbin/policy-rc.d'
   - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1 8.8.8.8\nsearch openstacklocal" > /etc/resolv.conf'
+  - "cat /etc/network/interfaces | grep enp3s0 || echo 'auto enp3s0\niface enp3s0 inet dhcp' >> /etc/network/interfaces"
+  - "cat /etc/hosts | grep 192.168.122.99 || echo '192.168.122.99 stack-salt' >> /etc/hosts"
 
 hostname: stack-control-1
 
+network:
+  version: 2
+  ethernets:
+    enp1s0:
+      dhcp4: true
+    enp3s0:
+      dhcp4: true
+
 apt:
-  http_proxy: "http://192.168.122.151:3142"
+  http_proxy: "http://stack-salt:3142"
   https_proxy: "DIRECT"
-  #primary:
-  #  - arches: [default]
-  #    search:
-  #      - "http://192.168.122.151:3142"
   sources:
     salt:
       keyserver: "https://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2/SALTSTACK-GPG-KEY.pub"
@@ -27,7 +33,6 @@ apt:
       keyid: "5EDB1B62EC4926EA"
 
 packages:
-  - openssh-server
   - salt-minion
   - ubuntu-cloud-keyring
   - ifupdown
@@ -50,7 +55,7 @@ write_files:
       ICAgICBeXl5eICAgICBeXl4gICAgXl4KICAgICAgICAgXl5eXiAgICAgIF5eXicK
   - path: /etc/salt/minion.d/master.conf
     content: |
-      master: 192.168.122.151
+      master: stack-salt
       log_level: info
   - path: /etc/salt/grains
     content: |

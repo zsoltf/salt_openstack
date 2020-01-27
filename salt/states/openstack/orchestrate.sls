@@ -1,4 +1,4 @@
-# preapre nodes
+# prepare nodes
 initial-preparation:
   salt.state:
     - tgt: 'openstack:role'
@@ -14,7 +14,22 @@ initial-node-preparation:
     - tgt_type: compound
     - sls: openstack.node
 
+##############
+# monitor node
+##############
+monitor-node:
+  salt.state:
+    - tgt: 'openstack:role:monitor'
+    - tgt_type: grain
+    - sls:
+      - openstack.monitor.server
+      - openstack.monitor.client
+    - require:
+      - salt: control-plane
 
+###########
+# data node
+###########
 # install database, message queue, kv store and memcache
 etcd-data-node:
   salt.state:
@@ -57,7 +72,9 @@ create-sql-tables:
     - require:
       - salt: sql-data-node
 
-# controller apis and network node
+############
+# controller
+############
 control-plane:
   salt.state:
     - tgt: 'openstack:role:controller'
@@ -77,7 +94,9 @@ control-plane:
       - salt: memcache-data-node
       - salt: mq-data-node
 
-# compute node with network
+##############
+# compute node
+##############
 compute-node:
   salt.state:
     - tgt: 'openstack:role:compute'
@@ -98,7 +117,9 @@ discover-nova:
     - require:
       - salt: compute-node
 
+##############
 # storage node
+##############
 storage-node:
   salt.state:
     - tgt: 'openstack:role:storage'
@@ -106,3 +127,19 @@ storage-node:
     - sls: openstack.cinder.storage
     - require:
       - salt: control-plane
+
+#################
+# monitor clients
+#################
+monitor-clients:
+  salt.state:
+    - tgt: 'openstack:role:*'
+    - tgt_type: grain
+    - sls: openstack.monitor.client
+    - require:
+      - salt: control-plane
+      - salt: storage-node
+      - salt: etcd-data-node
+      - salt: mq-data-node
+      - salt: memcache-data-node
+      - salt: sql-data-node

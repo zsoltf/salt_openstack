@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import overlay_network, provider_interface, database, mq, memcache, controller, passwords with context %}
+{% from 'openstack/map.jinja' import overlay_network, provider_name, provider_interface, database, mq, memcache, controller, passwords with context %}
 
 {% set overlay_interface_ip = [] %}
 # maybe try ip_addrs with cidr arg
@@ -6,6 +6,14 @@
   {% do overlay_interface_ip.append(ip) %}
 {% endfor %}
 {% set overlay_interface_ip = overlay_interface_ip|first %}
+
+{% set external_net_name = salt['pillar.get']('openstack:external_net_name') %}
+{% set external_net_type = salt['pillar.get']('openstack:external_net_type') %}
+{% set external_net_subnet = salt['pillar.get']('openstack:external_net_subnet') %}
+{% set external_net_gateway = salt['pillar.get']('openstack:external_net_gateway') %}
+{% set external_net_nameservers = salt['pillar.get']('openstack:external_net_nameservers') %}
+{% set external_net_pool_start = salt['pillar.get']('openstack:external_net_pool_start') %}
+{% set external_net_pool_end = salt['pillar.get']('openstack:external_net_pool_end') %}
 
 openstack-neutron:
   pkg.installed:
@@ -71,7 +79,7 @@ openstack-neutron-ml2-config:
           mechanism_drivers: linuxbridge,l2population
           extension_drivers: port_sercurity
         ml2_type_flat:
-          flat_networks: provider
+          flat_networks: {{ provider_name }}
         ml2_type_vxlan:
           vni_ranges: '1:1000'
         securitygroup:
@@ -82,7 +90,7 @@ openstack-neutron-linuxbridge-config:
     - name: /etc/neutron/plugins/ml2/linuxbridge_agent.ini
     - sections:
         linux_bridge:
-          physical_interface_mappings: 'provider:{{ provider_interface }}'
+          physical_interface_mappings: '{{ provider_name }}:{{ provider_interface }}'
         vxlan:
           enable_vxlan: 'true'
           local_ip: {{ overlay_interface_ip }}
@@ -166,15 +174,33 @@ openstack-neutron-finalize:
     - onchanges:
       - cmd: openstack-neutron-bootstrap
 
+{% set external_net_name = salt['pillar.get']('openstack:external_net_name') %}
+{% set external_net_type = salt['pillar.get']('openstack:external_net_type') %}
+{% set external_net_subnet = salt['pillar.get']('openstack:external_net_subnet') %}
+{% set external_net_gateway = salt['pillar.get']('openstack:external_net_gateway') %}
+{% set external_net_nameservers = salt['pillar.get']('openstack:external_net_nameservers') %}
+{% set external_net_pool_start = salt['pillar.get']('openstack:external_net_pool_start') %}
+{% set external_net_pool_end = salt['pillar.get']('openstack:external_net_pool_end') %}
+
 openstack-neutron-create-net:
   cmd.run:
     - name: |
         openstack network create --share --external \
-          --provider-physical-network provider --provider-network-type flat boneyard
-        openstack subnet create --network boneyard \
-          --allocation-pool start=10.250.18.49,end=10.250.18.99 \
-          --dns-nameserver 10.5.48.8 --gateway 10.250.18.1 \
-          --subnet-range 10.250.18.0/23 boneyard
+          --provider-physical-network {{ provider_name }} \
+          --provider-network-type {{ external_net_type }} {{ external_net_name }}
+        openstack subnet create --network {{ external_net_name }} \
+          --allocation-pool start={{ external_net_pool_start }},end={{ external_net_pool_end }} \
+          --dns-nameserver {{ external_net_nameservers }} --gateway {{ external_net_gateway }} \
+          --subnet-range {{ external_net_subnet}} {{ external_net_name }}
+    - env:
+        OS_CLOUD: test
+    - unless: openstack network show {{ external_net_name }}
+
+openstack-neutron-default-security-group:
+  cmd.run:
+    - name: |
+        openstack security group rule create --proto icmp default
+        openstack security group rule create --proto tcp --dst-port 22 default
     - env:
         OS_CLOUD: test
     - onchanges:

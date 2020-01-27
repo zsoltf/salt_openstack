@@ -8,24 +8,25 @@ bootcmd:
   - 'chmod +x /usr/sbin/policy-rc.d'
   - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1 8.8.8.8\nsearch openstacklocal" > /etc/resolv.conf'
   - "cat /etc/hosts | grep 192.168.122.99 || echo '192.168.122.99 stack-salt' >> /etc/hosts"
-  - 'mkdir -p /srv/salt && mount -t 9p -o trans=virtio,version=9p2000.L /salt /srv/salt'
 
-mounts:
-  - [ vdb, /var ]
-
-hostname: stack-salt
+hostname: stack-storage-2
 
 apt:
+  http_proxy: "http://stack-salt:3142"
+  https_proxy: "DIRECT"
   sources:
     salt:
       keyserver: "https://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2/SALTSTACK-GPG-KEY.pub"
       keyid: "0E08A149DE57BFBE"
       source: "deb http://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2 bionic main"
+    openstack:
+      source: "deb http://ubuntu-cloud.archive.canonical.com/ubuntu bionic-updates/train main"
+      keyid: "5EDB1B62EC4926EA"
 
 packages:
-  - apt-cacher-ng
-  - salt-master
   - salt-minion
+  - ubuntu-cloud-keyring
+  - ifupdown
 
 write_files:
   - path: /etc/update-motd.d/00-header
@@ -43,27 +44,9 @@ write_files:
       ICAgICAgICAgX19fX198X19fX3xfX19ffF9fX19cXFxfXwotLS0tLS0tLS1cICAgICAgICAgICAg
       ICAgICAgIC8tLS0tLS0tLS0KICBeXl5eXiBeXl5eXl5eXl5eXl5eXl5eXl5eXl4KICAgIF5eXl4g
       ICAgICBeXl5eICAgICBeXl4gICAgXl4KICAgICAgICAgXl5eXiAgICAgIF5eXicK
-  - path: /etc/salt/master.d/master.conf
-    content: |
-      # master config for testing
-      auto_accept: True
-      cli_summary: True
-      file_roots:
-        base:
-          - /srv/salt/states
-      file_recv: True
-      fileserver_backend:
-        - roots
-        - minionfs
-      minionfs_mountpoint: salt://minionfs
-      pillar_roots:
-        base:
-          - /srv/salt/pillar
-      state_output: changes_id
-      log_level: info
   - path: /etc/salt/minion.d/master.conf
     content: |
-      master: localhost
+      master: stack-salt
       log_level: info
   - path: /etc/salt/grains
     content: |
@@ -71,8 +54,7 @@ write_files:
       datacenter: test
       openstack:
         role:
-          - monitor
-          - salt
+          - storage
 
 disable_root: false
 users:
@@ -82,6 +64,7 @@ users:
     lock_passwd: true
     shell: /bin/bash
     ssh_authorized_keys: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgZCoDQ3sfapjoPTnnoEIJS86IHlFRlfuyqmvs1yRWQQZ0tqJQ2rtaHY6SqjhA5HEsXdJzwtFcf9BjNj2coYSNNIGp18tan0PMHpC6VvTQQBVlBQHt4cTwu6UjeeTl+5Ag4jo5EVJ8bh2MXdk9i95rzZl8czvA5dHxqaip6n75CR5oYtEU92Sa7wRcgf8poxA+uTyjGUV2ZuYKPSFSTdeOQkjiNlXUhQYNNvyXkKkeXs627bu78uxp9ZnNa1umZ87zyP16t0S55U1ATghZx3EQWQ1pH8cm9TZX/Wbv298WunV+S93/+upLqVsrArYWIEhd0FMRc5hkeNEktWKncBkrI/+75w3PsZo02UQMsnjcIFZKQHqsvgtuFDxX8YbhNurB7UXaIob0anDuPgHWSvauNSu6cH5Hxo2vCCAsukkSMrHomV+zVndqMrmSAiYjrBQzj3XwmU/lHtgXFFHhzIUZSiC5MtHw7KxLvUFLLDCVWq9F+Q42a87/JB43QmlEe3M= zsolt@hyperion
+
 
 final_message: "Is this thing on? $UPTIME"
 

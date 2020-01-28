@@ -1,7 +1,7 @@
 # images for testing
 
 .PHONY: all
-all: dev
+all: stack
 
 .PHONY: setup
 setup: virt_network salt
@@ -9,8 +9,8 @@ setup: virt_network salt
 .PHONY: images
 images: stack-salt.img stack-control-1.img stack-compute-1.img stack-storage-1.img
 
-.PHONY: dev
-dev: control compute storage
+.PHONY: stack
+stack: control compute storage
 
 bionic-server-cloudimg-amd64.img:
 	@echo
@@ -69,28 +69,10 @@ stack-storage-1.img: bionic.img storage-1.yaml
 	  --memory 2048 \
 	  --disk stack-storage-1.img,device=disk,bus=virtio,format=qcow2 \
 	  --disk storage-1.iso,device=cdrom \
-	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-1,size=25 \
-	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-2,size=25 \
-	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-3,size=25 \
-	  --os-type linux \
-	  --os-variant ubuntu18.04 \
-	  --virt-type kvm \
-	  --graphics none \
-	  --network network=default,model=virtio \
-	  --import
-
-stack-storage-2.img: bionic.img storage-2.yaml
-	cloud-localds storage-2.iso storage-2.yaml && \
-	cp bionic.img stack-storage-2.img && \
-	virt-install \
-	  --name stack-storage-2 \
-	  --vcpus 2 \
-	  --memory 2048 \
-	  --disk stack-storage-2.img,device=disk,bus=virtio,format=qcow2 \
-	  --disk storage-2.iso,device=cdrom \
-	  --disk path=/var/lib/libvirt/images/stack-storage-2-disk-1,size=25 \
-	  --disk path=/var/lib/libvirt/images/stack-storage-2-disk-2,size=25 \
-	  --disk path=/var/lib/libvirt/images/stack-storage-3-disk-2,size=25 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-1,size=40 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-2,size=40 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-3,size=40 \
+	  --disk path=/var/lib/libvirt/images/stack-storage-1-disk-4,size=40 \
 	  --os-type linux \
 	  --os-variant ubuntu18.04 \
 	  --virt-type kvm \
@@ -130,9 +112,8 @@ compute: stack-compute-1.img
 	virsh start stack-compute-1
 
 .PHONY: storage
-storage: stack-storage-1.img stack-storage-2.img
+storage: stack-storage-1.img
 	virsh start stack-storage-1
-	virsh start stack-storage-2
 
 .PHONY: virt_network
 virt_network: virt-host-network.xml virt-overlay-network.xml

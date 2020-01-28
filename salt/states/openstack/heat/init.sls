@@ -81,3 +81,16 @@ openstack-heat-bootstrap-db:
         service heat-engine restart
     - onchanges:
         - ini: openstack-heat-initial-config
+
+#TODO: horizon dashboards are bad, they should go somewhere else
+openstack-heat-dashboard:
+  cmd.run:
+    - name: |
+        apt-get -qq install -y python3-pip
+        pip3 install -q heat-dashboard
+        cp /usr/local/lib/python3.6/dist-packages/heat_dashboard/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+        service apache2 restart
+    - onchanges:
+      - cmd: openstack-heat-bootstrap-db

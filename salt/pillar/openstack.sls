@@ -83,6 +83,7 @@ test:
       - /dev/vdb
       - /dev/vdc
       - /dev/vdd
+      - /dev/vde
 
 {% endload %}
 {% set overrides = salt['grains.filter_by'](map, grain='datacenter', base='default') %}

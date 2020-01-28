@@ -102,6 +102,21 @@ openstack-monitor-fluentd:
           port 24224
         </source>
 
+        <filter openstack.*>
+          @type record_transformer
+          <record>
+            app ${tag_parts[1]}
+          </record>
+        </filter>
+
+        <filter openstack.apache>
+          @type record_transformer
+          enable_ruby
+          <record>
+            message ${record['host']} ${record['method']} ${record['path']} ${record['code']} ${record['size']}
+          </record>
+        </filter>
+
         <match **>
           @type elasticsearch
           host {{ grains['id'] }}

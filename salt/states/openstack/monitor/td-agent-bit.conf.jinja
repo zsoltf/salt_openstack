@@ -10,11 +10,6 @@
     HTTP_Port    2020
 
 [INPUT]
-    Name cpu
-    Tag  metrics.cpu
-    Interval_Sec 10
-
-[INPUT]
     Name systemd
     Tag  systemd.local
     DB /opt/td-agent-bit/systemd.db
@@ -65,7 +60,7 @@
     DB /opt/td-agent-bit/tail.apache.db
     Mem_Buf_Limit 1MB
     Parser apache2
-    Tag openstack
+    Tag openstack.apache
 
 [INPUT]
     Name tail
@@ -74,7 +69,7 @@
     DB /opt/td-agent-bit/tail.apache-error.db
     Mem_Buf_Limit 1MB
     Parser apache_error
-    Tag openstack
+    Tag openstack.apache_error
 
 [INPUT]
     Name tail
@@ -84,7 +79,7 @@
     DB /opt/td-agent-bit/tail.apache-placement.db
     Mem_Buf_Limit 1MB
     Parser apache_error-placement
-    Tag openstack
+    Tag openstack.apache_error
 
 [INPUT]
     Name tail
@@ -93,7 +88,7 @@
     DB /opt/td-agent-bit/tail.cinder.db
     Mem_Buf_Limit 1MB
     Parser apache_access-cinder
-    Tag openstack
+    Tag openstack.apache
 
 [INPUT]
     Name tail
@@ -104,7 +99,7 @@
     Mem_Buf_Limit 1MB
     Parser apache_error-cinder
     Key message
-    Tag openstack
+    Tag openstack.apache_error
 
 ########################
 # openstack service logs
@@ -119,7 +114,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.cinder
 
 [INPUT]
     Name tail
@@ -130,7 +125,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.glance
 
 [INPUT]
     Name tail
@@ -141,7 +136,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.heat
 
 [INPUT]
     Name tail
@@ -152,7 +147,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.keystone
 
 [INPUT]
     Name tail
@@ -163,7 +158,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.neutron
 
 [INPUT]
     Name tail
@@ -174,7 +169,7 @@
     Multiline On
     Parser_Firstline openstack
     Parser_1 openstack
-    Tag openstack
+    Tag openstack.nova
 
 ############
 # data logs
@@ -203,10 +198,7 @@
 [FILTER]
     Name modify
     Match *
-    Set hostname ${HOSTNAME}
 
-    Rename BOOT_ID boot_id
-    Rename CAP_EFFECTIVE cap_effective
     Rename CMDLINE cmdline
     Rename COMM comm
     Rename EXE exe
@@ -214,12 +206,8 @@
     Rename HOSTNAME hostname
     Rename MACHINE_ID machine_id
     Rename MESSAGE message
-    Rename MESSAGE message
     Rename PID pid
     Rename PRIORITY priority
-    Rename SELINUX_CONTEXT selinux_context
-    Rename SOURCE_REALTIME_TIMESTAMP source_realtime_timestamp
-    Rename STREAM_ID stream_id
     Rename SYSLOG_FACILITY syslog_facility
     Rename SYSLOG_IDENTIFIER syslog_identifier
     Rename SYSLOG_PID syslog_pid
@@ -229,6 +217,8 @@
     Rename SYSTEMD_UNIT systemd_unit
     Rename TRANSPORT transport
     Rename UID uid
+
+    Set hostname ${HOSTNAME}
 
 [OUTPUT]
     Name  forward

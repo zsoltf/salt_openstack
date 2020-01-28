@@ -107,4 +107,3 @@ openstack-nova-compute-restart:
         service nova-compute restart
     - onchanges:
         - ini: openstack-nova-compute-nova-config
-        - ini: openstack-nova-compute-initial-config

@@ -3,7 +3,9 @@ initial-preparation:
   salt.state:
     - tgt: 'openstack:role'
     - tgt_type: grain
-    - sls: openstack
+    - sls:
+      - openstack
+      - openstack.monitor.client
 
 initial-node-preparation:
   salt.state:
@@ -25,7 +27,7 @@ monitor-node:
       - openstack.monitor.server
       - openstack.monitor.client
     - require:
-      - salt: control-plane
+      - salt: initial-preparation
 
 ###########
 # data node
@@ -127,19 +129,3 @@ storage-node:
     - sls: openstack.cinder.storage
     - require:
       - salt: control-plane
-
-#################
-# monitor clients
-#################
-monitor-clients:
-  salt.state:
-    - tgt: 'openstack:role:*'
-    - tgt_type: grain
-    - sls: openstack.monitor.client
-    - require:
-      - salt: control-plane
-      - salt: storage-node
-      - salt: etcd-data-node
-      - salt: mq-data-node
-      - salt: memcache-data-node
-      - salt: sql-data-node

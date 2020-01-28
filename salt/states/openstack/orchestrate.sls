@@ -71,6 +71,7 @@ create-sql-tables:
       - openstack.cinder.sql
       - openstack.heat.sql
       - openstack.barbican.sql
+      - openstack.designate.sql
     - require:
       - salt: sql-data-node
 
@@ -91,6 +92,7 @@ control-plane:
       - openstack.cinder.controller
       - openstack.heat
       - openstack.barbican
+      - openstack.designate
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

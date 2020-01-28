@@ -49,6 +49,8 @@ default:
       heat_db_pass: Ieh7Ohc5
       barbican_pass: eeWuk7Re
       barbican_db_pass: ab7aoNu1
+      designate_pass: AeB7ieju
+      designate_db_pass: sho1ohTh
 
 boneyard:
   base:

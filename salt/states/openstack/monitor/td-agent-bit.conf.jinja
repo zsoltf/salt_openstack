@@ -171,6 +171,39 @@
     Parser_1 openstack
     Tag openstack.nova
 
+[INPUT]
+    Name tail
+    Path /var/log/barbican/*.log
+    Path_Key filename
+    DB /opt/td-agent-bit/tail.barbican.db
+    Mem_Buf_Limit 1MB
+    Multiline On
+    Parser_Firstline openstack
+    Parser_1 openstack
+    Tag openstack.barbican
+
+[INPUT]
+    Name tail
+    Path /var/log/designate/*.log
+    Path_Key filename
+    DB /opt/td-agent-bit/tail.designate.db
+    Mem_Buf_Limit 1MB
+    Multiline On
+    Parser_Firstline openstack
+    Parser_1 openstack
+    Tag openstack.designate
+
+[INPUT]
+    Name tail
+    Path /var/log/octavia/*.log
+    Path_Key filename
+    DB /opt/td-agent-bit/tail.octavia.db
+    Mem_Buf_Limit 1MB
+    Multiline On
+    Parser_Firstline openstack
+    Parser_1 openstack
+    Tag openstack.octavia
+
 ############
 # data logs
 ############

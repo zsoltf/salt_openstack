@@ -51,6 +51,8 @@ default:
       barbican_db_pass: ab7aoNu1
       designate_pass: AeB7ieju
       designate_db_pass: sho1ohTh
+      octavia_pass: Ohquoh1v
+      octavia_db_pass: WieWahm2
 
 boneyard:
   base:

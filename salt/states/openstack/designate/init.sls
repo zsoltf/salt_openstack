@@ -131,3 +131,22 @@ openstack-designate-service-{{ service }}:
       - ini: openstack-designate-initial-config
       - file: openstack-designate-bind-config
 {% endfor %}
+
+#TODO: horizon dashboards are bad, they should go somewhere else
+openstack-designate-dashboard:
+  file.replace:
+    - name: /etc/openstack-dashboard/local_settings.py
+    - append_if_not_found: True
+    - pattern: ^DESIGNATE = .*
+    - repl: "DESIGNATE = { 'records_use_fips': True }"
+  cmd.run:
+    - name: |
+        apt-get -qq install -y python3-pip
+        pip3 install -q designate-dashboard
+        cp /usr/local/lib/python3.6/dist-packages/designatedashboard/enabled/_1*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+        service apache2 restart
+    - onchanges:
+      - cmd: openstack-designate-bootstrap-db
+      - file: openstack-designate-dashboard

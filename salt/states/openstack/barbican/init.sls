@@ -61,3 +61,19 @@ openstack-barbican-bootstrap-db:
         service apache2 restart
     - onchanges:
         - ini: openstack-barbican-initial-config
+
+
+#TODO: horizon dashboards are bad, they should go somewhere else
+#NOTE: barbican-ui doesn't seem to work yet
+openstack-barbican-dashboard:
+  cmd.run:
+    - name: |
+        apt-get -qq install -y python3-pip
+        pip3 install -q barbican-ui
+        pip3 install -q barbican_ui
+        cp /usr/local/lib/python3.6/dist-packages/barbican_ui/enabled/_9*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+        service apache2 restart
+    - onchanges:
+      - cmd: openstack-barbican-bootstrap-db

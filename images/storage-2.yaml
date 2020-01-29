@@ -6,7 +6,7 @@ bootcmd:
   - '> /etc/update-motd.d/50-motd-news'
   - 'echo "#!/bin/bash\nexit 101" > /usr/sbin/policy-rc.d'
   - 'chmod +x /usr/sbin/policy-rc.d'
-  - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1 8.8.8.8\nsearch openstacklocal" > /etc/resolv.conf'
+  - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1\nsearch openstacklocal" > /etc/resolv.conf'
   - "cat /etc/hosts | grep 192.168.122.99 || echo '192.168.122.99 stack-salt' >> /etc/hosts"
 
 hostname: stack-storage-2

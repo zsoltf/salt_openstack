@@ -51,7 +51,7 @@ openstack-designate-bootstrap:
   cmd.run:
     - name: |
         rndc-confgen -a -k designate -c /etc/bind/designate_rndc.key -r /dev/urandom
-        chown 644 /etc/bind/designate_rndc.key
+        chmod 644 /etc/bind/designate_rndc.key
         openstack user create --domain default --password $designate_pass designate
         openstack role add --project service --user designate admin
         openstack service create --name designate --description "DNS" dns
@@ -121,7 +121,14 @@ openstack-designate-bootstrap-db:
     - onchanges:
         - ini: openstack-designate-initial-config
 
-{% for service in ['bind9', 'designate-worker', 'designate-producer', 'designate-mdns'] %}
+{% for service in [
+  'bind9',
+  'designate-agent',
+  'designate-api',
+  'designate-central',
+  'designate-worker',
+  'designate-producer',
+  'designate-mdns'] %}
 openstack-designate-service-{{ service }}:
   service.running:
     - name: {{ service }}

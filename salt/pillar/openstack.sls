@@ -53,6 +53,9 @@ default:
       designate_db_pass: sho1ohTh
       octavia_pass: Ohquoh1v
       octavia_db_pass: WieWahm2
+      ceilometer_pass: Puungee9
+      gnocchi_pass: oop9aHah
+      gnocchi_db_pass: xieWai2u
 
 boneyard:
   base:

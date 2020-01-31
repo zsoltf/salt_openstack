@@ -56,6 +56,13 @@ default:
       ceilometer_pass: Puungee9
       gnocchi_pass: oop9aHah
       gnocchi_db_pass: xieWai2u
+      aodh_pass: Yahch8ie
+      aodh_db_pass: jish3ahV
+      cloudkitty_pass: aecoh7Lu
+      cloudkitty_db_pass: fe3Eegho
+      zun_pass: lei3aiCo
+      zun_db_pass: Eivei1oh
+      kuryr_pass: Ae5xoox9
 
 boneyard:
   base:

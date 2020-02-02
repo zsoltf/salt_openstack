@@ -115,6 +115,22 @@ stack-dev.img: bionic.img devstack.yaml
 	  --network network=default,model=virtio \
 	  --import
 
+stack-horizon.img: bionic.img horizon.yaml
+	cloud-localds horizon.iso horizon.yaml && \
+	cp bionic-server-cloudimg-amd64.img stack-horizon.img && \
+	virt-install \
+	  --name stack-horizon \
+	  --vcpus 4 \
+	  --memory 2048 \
+	  --disk stack-horizon.img,device=disk,bus=virtio,format=qcow2 \
+	  --disk horizon.iso,device=cdrom \
+	  --os-type linux \
+	  --os-variant ubuntu18.04 \
+	  --virt-type kvm \
+	  --graphics none \
+	  --network network=default,model=virtio \
+	  --import
+
 .PHONY: salt
 salt: stack-salt.img
 	virsh start stack-salt
@@ -134,6 +150,10 @@ storage: stack-storage-1.img
 .PHONY: dev
 dev: stack-dev.img
 	virsh start stack-dev
+
+.PHONY: horizon
+horizon: stack-horizon.img
+	virsh start stack-horizon
 
 .PHONY: virt_network
 virt_network: virt-host-network.xml virt-overlay-network.xml

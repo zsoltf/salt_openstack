@@ -112,17 +112,6 @@ openstack-designate-pool-config:
                 rndc_port: 953
                 rndc_key_file: /etc/bind/designate_rndc.key
 
-openstack-designate-bootstrap-db:
-  cmd.run:
-    - name: |
-        designate-manage database sync
-        systemctl start designate-central designate-api
-        designate-manage pool update
-        systemctl start designate-worker designate-producer designate-mdns
-    - onchanges:
-        - ini: openstack-designate-initial-config
-        - file: openstack-designate-pool-config
-
 {% for service in [
   'bind9',
   'designate-agent',
@@ -135,11 +124,21 @@ openstack-designate-service-{{ service }}:
   service.running:
     - name: {{ service }}
     - enable: True
+    - require_in:
+      - cmd: openstack-designate-bootstrap-db
     - watch:
       - file: openstack-designate-pool-config
       - ini: openstack-designate-initial-config
       - file: openstack-designate-bind-config
 {% endfor %}
+
+openstack-designate-bootstrap-db:
+  cmd.run:
+    - name: |
+        designate-manage database sync
+        designate-manage pool update
+    - onchanges:
+        - file: openstack-designate-pool-config
 
 #TODO: horizon dashboards are bad, they should go somewhere else
 openstack-designate-dashboard:

@@ -6,7 +6,7 @@ openstack-barbican:
         - barbican-api
         - barbican-keystone-listener
         - barbican-worker
-        - python-barbicanclient
+        - python3-barbicanclient
 
 openstack-barbican-clear-comments:
   cmd.run:

@@ -1,0 +1,35 @@
+#cloud-config
+
+# prevent services from starting after install
+bootcmd:
+  - "cat /etc/hosts | grep 192.168.122.99 || echo '192.168.122.99 stack-salt' >> /etc/hosts"
+
+hostname: stack-horizon-fedora
+
+write_files:
+  - path: /etc/salt/minion.d/master.conf
+    content: |
+      master: stack-salt
+      log_level: info
+  - path: /etc/salt/grains
+    content: |
+      app: openstack
+      datacenter: test
+      openstack:
+        role:
+          - horizon
+
+disable_root: false
+users:
+  - name: zsolt
+    groups: adm,sudo
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    shell: /bin/bash
+    ssh_authorized_keys: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgZCoDQ3sfapjoPTnnoEIJS86IHlFRlfuyqmvs1yRWQQZ0tqJQ2rtaHY6SqjhA5HEsXdJzwtFcf9BjNj2coYSNNIGp18tan0PMHpC6VvTQQBVlBQHt4cTwu6UjeeTl+5Ag4jo5EVJ8bh2MXdk9i95rzZl8czvA5dHxqaip6n75CR5oYtEU92Sa7wRcgf8poxA+uTyjGUV2ZuYKPSFSTdeOQkjiNlXUhQYNNvyXkKkeXs627bu78uxp9ZnNa1umZ87zyP16t0S55U1ATghZx3EQWQ1pH8cm9TZX/Wbv298WunV+S93/+upLqVsrArYWIEhd0FMRc5hkeNEktWKncBkrI/+75w3PsZo02UQMsnjcIFZKQHqsvgtuFDxX8YbhNurB7UXaIob0anDuPgHWSvauNSu6cH5Hxo2vCCAsukkSMrHomV+zVndqMrmSAiYjrBQzj3XwmU/lHtgXFFHhzIUZSiC5MtHw7KxLvUFLLDCVWq9F+Q42a87/JB43QmlEe3M= zsolt@hyperion
+
+
+final_message: "Is this thing on? $UPTIME"
+
+power_state:
+  mode: poweroff

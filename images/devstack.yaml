@@ -1,0 +1,44 @@
+#cloud-config
+
+# prevent services from starting after install
+bootcmd:
+  - 'rm /etc/resolv.conf && echo "nameserver 192.168.100.1\nsearch openstacklocal" > /etc/resolv.conf'
+  - "cat /etc/hosts | grep 192.168.122.99 || echo '192.168.122.99 stack-salt' >> /etc/hosts"
+
+apt:
+  http_proxy: "http://stack-salt:3142"
+  https_proxy: "DIRECT"
+
+users:
+  - default
+  - name: stack
+    lock_passwd: False
+    sudo: ["ALL=(ALL) NOPASSWD:ALL\nDefaults:stack !requiretty"]
+    shell: /bin/bash
+  - name: zsolt
+    groups: adm,sudo
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    lock_passwd: true
+    shell: /bin/bash
+    ssh_authorized_keys: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDgZCoDQ3sfapjoPTnnoEIJS86IHlFRlfuyqmvs1yRWQQZ0tqJQ2rtaHY6SqjhA5HEsXdJzwtFcf9BjNj2coYSNNIGp18tan0PMHpC6VvTQQBVlBQHt4cTwu6UjeeTl+5Ag4jo5EVJ8bh2MXdk9i95rzZl8czvA5dHxqaip6n75CR5oYtEU92Sa7wRcgf8poxA+uTyjGUV2ZuYKPSFSTdeOQkjiNlXUhQYNNvyXkKkeXs627bu78uxp9ZnNa1umZ87zyP16t0S55U1ATghZx3EQWQ1pH8cm9TZX/Wbv298WunV+S93/+upLqVsrArYWIEhd0FMRc5hkeNEktWKncBkrI/+75w3PsZo02UQMsnjcIFZKQHqsvgtuFDxX8YbhNurB7UXaIob0anDuPgHWSvauNSu6cH5Hxo2vCCAsukkSMrHomV+zVndqMrmSAiYjrBQzj3XwmU/lHtgXFFHhzIUZSiC5MtHw7KxLvUFLLDCVWq9F+Q42a87/JB43QmlEe3M= zsolt@hyperion
+
+write_files:
+  - content: |
+        #!/bin/sh
+        DEBIAN_FRONTEND=noninteractive sudo apt-get -qqy update || sudo yum update -qy
+        DEBIAN_FRONTEND=noninteractive sudo apt-get install -qqy git || sudo yum install -qy git
+        sudo chown stack:stack /home/stack
+        cd /home/stack
+        git clone https://git.openstack.org/openstack-dev/devstack
+        cd devstack
+        echo '[[local|localrc]]' > local.conf
+        echo ADMIN_PASSWORD=password >> local.conf
+        echo DATABASE_PASSWORD=password >> local.conf
+        echo RABBIT_PASSWORD=password >> local.conf
+        echo SERVICE_PASSWORD=password >> local.conf
+        ./stack.sh
+    path: /home/stack/start.sh
+    permissions: 0755
+
+runcmd:
+  - su -l stack ./start.sh

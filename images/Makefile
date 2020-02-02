@@ -17,7 +17,7 @@ bionic-server-cloudimg-amd64.img:
 	@echo Downloading Ubuntu Bionic Cloud Image
 	@echo
 	curl https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img -O
-	qemu-img resize bionic-server-cloudimg-amd64.img 10G
+	qemu-img resize bionic-server-cloudimg-amd64.img 20G
 	qemu-img info bionic-server-cloudimg-amd64.img
 
 bionic.img: bionic-server-cloudimg-amd64.img
@@ -99,6 +99,22 @@ stack-compute-1.img: bionic.img compute.yaml
 	  --network network=overlay,model=virtio \
 	  --import
 
+stack-dev.img: bionic.img devstack.yaml
+	cloud-localds devstack.iso devstack.yaml && \
+	cp bionic-server-cloudimg-amd64.img stack-dev.img && \
+	virt-install \
+	  --name stack-dev \
+	  --vcpus 8 \
+	  --memory 16384 \
+	  --disk stack-dev.img,device=disk,bus=virtio,format=qcow2 \
+	  --disk devstack.iso,device=cdrom \
+	  --os-type linux \
+	  --os-variant ubuntu18.04 \
+	  --virt-type kvm \
+	  --graphics none \
+	  --network network=default,model=virtio \
+	  --import
+
 .PHONY: salt
 salt: stack-salt.img
 	virsh start stack-salt
@@ -114,6 +130,10 @@ compute: stack-compute-1.img
 .PHONY: storage
 storage: stack-storage-1.img
 	virsh start stack-storage-1
+
+.PHONY: dev
+dev: stack-dev.img
+	virsh start stack-dev
 
 .PHONY: virt_network
 virt_network: virt-host-network.xml virt-overlay-network.xml

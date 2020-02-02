@@ -63,6 +63,12 @@ default:
       zun_pass: lei3aiCo
       zun_db_pass: Eivei1oh
       kuryr_pass: Ae5xoox9
+      senlin_pass: iraeH6ei
+      senlin_db_pass: chohNg6t
+      murano_pass: euf1ao0Z
+      murano_db_pass: jeeyaZ0y
+      mistral_pass: Sae2wois
+      mistral_db_pass: Lucio5ei
 
 boneyard:
   base:

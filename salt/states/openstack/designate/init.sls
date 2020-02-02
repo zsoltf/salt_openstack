@@ -145,7 +145,7 @@ openstack-designate-dashboard:
     - name: /etc/openstack-dashboard/local_settings.py
     - append_if_not_found: True
     - pattern: ^DESIGNATE = .*
-    - repl: "DESIGNATE = { 'records_use_fips': True }"
+    - repl: 'DESIGNATE = { "records_use_fips": True }'
   cmd.run:
     - name: |
         apt-get -qq install -y python3-pip

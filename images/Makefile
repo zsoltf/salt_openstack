@@ -21,12 +21,12 @@ bionic-server-cloudimg-amd64.img:
 	qemu-img info bionic-server-cloudimg-amd64.img
 
 bionic.img: bionic-server-cloudimg-amd64.img
-	qemu-img convert -f qcow2 bionic-server-cloudimg-amd64.img bionic.img
-	qemu-img info bionic.img
+	#qemu-img convert -f qcow2 bionic-server-cloudimg-amd64.img bionic.img
+	qemu-img info bionic-server-cloudimg-amd64.img
 
 stack-salt.img: bionic.img salt.yaml
 	cloud-localds salt.iso salt.yaml && \
-	cp bionic.img stack-salt.img && \
+	cp bionic-server-cloudimg-amd64.img stack-salt.img && \
 	virt-install \
 	  --name stack-salt \
 	  --vcpus 2 \
@@ -44,11 +44,11 @@ stack-salt.img: bionic.img salt.yaml
 
 stack-control-1.img: bionic.img controller.yaml
 	cloud-localds controller.iso controller.yaml && \
-	cp bionic.img stack-control-1.img && \
+	cp bionic-server-cloudimg-amd64.img stack-control-1.img && \
 	virt-install \
 	  --name stack-control-1 \
 	  --vcpus 4 \
-	  --memory 8192 \
+	  --memory 12288 \
 	  --disk stack-control-1.img,device=disk,bus=virtio,format=qcow2 \
 	  --disk controller.iso,device=cdrom \
 	  --os-type linux \
@@ -62,7 +62,7 @@ stack-control-1.img: bionic.img controller.yaml
 
 stack-storage-1.img: bionic.img storage-1.yaml
 	cloud-localds storage-1.iso storage-1.yaml && \
-	cp bionic.img stack-storage-1.img && \
+	cp bionic-server-cloudimg-amd64.img stack-storage-1.img && \
 	virt-install \
 	  --name stack-storage-1 \
 	  --vcpus 2 \
@@ -82,12 +82,12 @@ stack-storage-1.img: bionic.img storage-1.yaml
 
 stack-compute-1.img: bionic.img compute.yaml
 	cloud-localds compute.iso compute.yaml && \
-	cp bionic.img stack-compute-1.img && \
+	cp bionic-server-cloudimg-amd64.img stack-compute-1.img && \
 	virt-install \
 	  --name stack-compute-1 \
 	  --cpu host-passthrough \
 	  --vcpus 4 \
-	  --memory 4096 \
+	  --memory 2048 \
 	  --disk stack-compute-1.img,device=disk,bus=virtio,format=qcow2 \
 	  --disk compute.iso,device=cdrom \
 	  --os-type linux \

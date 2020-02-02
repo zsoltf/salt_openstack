@@ -118,8 +118,10 @@ openstack-designate-bootstrap-db:
         designate-manage database sync
         systemctl start designate-central designate-api
         designate-manage pool update
+        systemctl start designate-worker designate-producer designate-mdns
     - onchanges:
         - ini: openstack-designate-initial-config
+        - file: openstack-designate-pool-config
 
 {% for service in [
   'bind9',

@@ -73,6 +73,7 @@ create-sql-tables:
       - openstack.barbican.sql
       - openstack.designate.sql
       - openstack.senlin.sql
+      - openstack.mistral.sql
     - require:
       - salt: sql-data-node
 
@@ -95,6 +96,7 @@ control-plane:
       - openstack.barbican
       - openstack.designate
       - openstack.senlin
+      - openstack.mistral
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

@@ -169,11 +169,37 @@ openstack-dashboard-config-10:
     - name: /etc/openstack-dashboard/local_settings.py
     - text: |
         AVAILABLE_THEMES = [
-        ('default', 'Default', 'themes/default'),
-        ('dark', 'Dark', 'themes/dark'),
-        ('light', 'Light', 'themes/light'),
+          ('default', 'Default', 'themes/default'),
+          ('dark', 'Dark', 'themes/dark'),
+          ('light', 'Light', 'themes/light'),
         ]
-        DEFAULT_THEME = 'dark'
+        DEFAULT_THEME = 'light'
+
+
+openstack-dashboard-config-11:
+  file.replace:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/themes/dark/static/bootstrap/_variable_customizations.scss
+    - pattern: ^\$brand-primary:\s+\#00897b;$
+    - repl: '$brand-primary: #0e79c1;'
+
+openstack-dashboard-config-12:
+  file.replace:
+    - name: /usr/share/openstack-dashboard/openstack_dashboard/themes/light/static/bootstrap/_variable_customizations.scss
+    - pattern: ^\$brand-primary:\s+\#00897b;$
+    - repl: '$brand-primary: #0e79c1;'
+
+openstack-dashboard-bootstrap:
+  cmd.run:
+    - name: |
+        python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        python3 /usr/share/openstack-dashboard/manage.py compress --force
+        service apache2 restart
+    - env:
+        DJANGO_SETTINGS_MODULE: openstack_dashboard.settings
+    - onchanges:
+        - file: openstack-dashboard-config-10
+        - file: openstack-dashboard-config-11
+        - file: openstack-dashboard-config-12
 
 
 openstack-dashboard-service:

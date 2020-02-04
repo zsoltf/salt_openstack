@@ -69,6 +69,9 @@ default:
       murano_db_pass: jeeyaZ0y
       mistral_pass: Sae2wois
       mistral_db_pass: Lucio5ei
+      magnum_pass: ohs2Aedi
+      magnum_db_pass: NooS1xei
+      magnum_domain_pass: Vaigh1ie
 
 boneyard:
   base:

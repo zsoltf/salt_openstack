@@ -1,5 +1,7 @@
 {% from 'openstack/map.jinja' import controller_ip, database, mq, memcache, controller, passwords with context %}
 
+# not ready for prime time
+
 openstack-magnum:
   pkg.installed:
     - names:
@@ -7,13 +9,13 @@ openstack-magnum:
       - magnum-conductor
       - python3-magnumclient
 
-openstack-magnum-clear-comments:
-  cmd.run:
-    - name: |
-        sed -i /^#/d /etc/magnum/magnum.conf
-        sed -i /^$/d /etc/magnum/magnum.conf
-    - onchanges:
-      - pkg: openstack-magnum
+#openstack-magnum-clear-comments:
+#  cmd.run:
+#    - name: |
+#        sed -i /^#/d /etc/magnum/magnum.conf
+#        sed -i /^$/d /etc/magnum/magnum.conf
+#    - onchanges:
+#      - pkg: openstack-magnum
 
 openstack-magnum-initial-config:
   ini.options_present:

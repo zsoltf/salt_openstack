@@ -74,7 +74,6 @@ create-sql-tables:
       - openstack.designate.sql
       - openstack.senlin.sql
       - openstack.mistral.sql
-      - openstack.magnum.sql
     - require:
       - salt: sql-data-node
 
@@ -98,7 +97,6 @@ control-plane:
       - openstack.designate
       - openstack.senlin
       - openstack.mistral
-      - openstack.magnum
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

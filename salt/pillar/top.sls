@@ -7,4 +7,5 @@ base:
 
   'datacenter:*':
     - match: grain
+    - ceph
     - openstack

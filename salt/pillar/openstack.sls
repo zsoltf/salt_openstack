@@ -130,17 +130,17 @@ mine_functions:
     cidr: {{ openstack['overlay_network'] }}
 
 # virt profiles
-virt:
-  disk:
-    ceph:
-      - data:
-          size: 30720
-  nic:
-    default:
-      eth0:
-        bridge: br0
-        model: virtio
-    neutron:
-      eth0:
-        bridge: br0
-        model: virtio
+#virt:
+#  disk:
+#    ceph:
+#      - data:
+#          size: 30720
+#  nic:
+#    default:
+#      eth0:
+#        bridge: br0
+#        model: virtio
+#    neutron:
+#      eth0:
+#        bridge: br0
+#        model: virtio

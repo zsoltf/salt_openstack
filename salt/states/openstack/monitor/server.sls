@@ -6,6 +6,13 @@
 {% do clients.append(node ~ ':9100') %}
 {% endfor %}
 
+{% set ceph_mine = salt['mine.get']('ceph:role:mon', 'test.ping', 'grain') %}
+{% set ceph_clients = [] %}
+{% for node in ceph_mine %}
+{% do ceph_clients.append(node ~ ':9283') %}
+{% do clients.append(node ~ ':9100') %}
+{% endfor %}
+
 # elastic stack
 
 openstack-monitor-elastic-repo:
@@ -160,6 +167,10 @@ openstack-monitor-prometheus:
           - job_name: node
             static_configs:
               - targets: {{ clients }}
+
+          - job_name: ceph
+            static_configs:
+              - targets: {{ ceph_clients }}
 
   pkg.installed:
     - name: prometheus

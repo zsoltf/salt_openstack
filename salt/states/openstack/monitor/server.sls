@@ -85,11 +85,50 @@ openstack-monitor-grafana-repo:
 openstack-monitor-grafana:
   pkg.installed:
     - name: grafana
+  ini.options_present:
+    - name: /etc/grafana/grafana.ini
+    - sections:
+        auth.anonymous:
+          enabled: 'true'
+          org_name: Main Org.
+          org_role: Viewer
+        security:
+          allow_embedding: 'true'
   service.running:
     - name: grafana-server
     - enable: True
-    - require:
+    - watch:
       - pkg: openstack-monitor-grafana
+      - ini: openstack-monitor-grafana
+
+openstack-monitor-grafana-plugins:
+  cmd.run:
+    - name: |
+        grafana-cli plugins install vonage-status-panel
+        grafana-cli plugins install grafana-piechart-panel
+        systemctl restart grafana-server
+    - require:
+      - service: openstack-monitor-grafana
+
+# TODO automate this step
+openstack-monitor-grafana-dashboards:
+  cmd.run:
+    - name: |
+        mkdir grafana
+        cd grafana
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/rbd-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/radosgw-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/radosgw-detail.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/pool-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/pool-detail.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/osds-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/osd-device-details.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/hosts-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/host-details.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/cephfs-overview.json
+        wget https://raw.githubusercontent.com/ceph/ceph/master/monitoring/grafana/dashboards/ceph-cluster.json
+    - rewget quire:
+      - service: openstack-monitor-grafana
 
 # fluentd
 

@@ -38,8 +38,18 @@ openstack-monitor-fluent-bit-parsers:
 openstack-monitor-prometheus-node-exporter:
   pkg.installed:
     - name: prometheus-node-exporter
+  ini.options_present:
+    - name: /lib/systemd/system/prometheus-node-exporter.service
+    - sections:
+        Service:
+          User: root
+  cmd.run:
+    - name: systemctl daemon-reload
+    - onchanges:
+        - ini: openstack-monitor-prometheus-node-exporter
   service.running:
     - name: prometheus-node-exporter
     - enable: True
     - require:
       - pkg: openstack-monitor-prometheus-node-exporter
+      - ini: openstack-monitor-prometheus-node-exporter

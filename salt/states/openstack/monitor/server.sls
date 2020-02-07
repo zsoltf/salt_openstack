@@ -6,10 +6,14 @@
 {% do clients.append(node ~ ':9100') %}
 {% endfor %}
 
-{% set ceph_mine = salt['mine.get']('ceph:role:mon', 'test.ping', 'grain') %}
+{% set ceph_mon_mine = salt['mine.get']('ceph:role:mon', 'test.ping', 'grain') %}
 {% set ceph_clients = [] %}
-{% for node in ceph_mine %}
+{% for node in ceph_mon_mine %}
 {% do ceph_clients.append(node ~ ':9283') %}
+{% endfor %}
+
+{% set ceph_mine = salt['mine.get']('ceph:role:*', 'test.ping', 'grain') %}
+{% for node in ceph_mine %}
 {% do clients.append(node ~ ':9100') %}
 {% endfor %}
 

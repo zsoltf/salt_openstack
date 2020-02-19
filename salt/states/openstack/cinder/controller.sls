@@ -1,5 +1,31 @@
-{% from 'openstack/map.jinja' import ceph, ceph_secret_uuid, ceph_client_cinder_key, admin_ip, mq, database, controller, memcache, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_admin_path, ceph_secret_uuid, admin_ip, mq, database, controller, memcache, passwords with context %}
 {% set cinder_host = grains['id'] %}
+
+{% if ceph %}
+
+include:
+  - ceph.repo
+  - ceph.config
+
+openstack-cinder-ceph-packages:
+  pkg.installed:
+    - names:
+        - python-minimal
+        - ceph-common
+        - python3-rbd
+        - python3-rados
+
+openstack-cinder-ceph-secrets:
+  file.managed:
+    - name: /etc/ceph/ceph.client.cinder.keyring
+    - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.cinder.keyring
+    - group: cinder
+    - mode: '0640'
+    - require:
+      - pkg: openstack-cinder-ceph-packages
+      - pkg: openstack-cinder
+
+{% endif %}
 
 openstack-cinder:
   pkg.installed:
@@ -53,23 +79,6 @@ openstack-cinder-initial-config:
           rados_connect_timeout: -1
           rbd_user: cinder
           rbd_secret_uuid: {{ ceph_secret_uuid }}
-
-openstack-cinder-ceph-packages:
-  pkg.installed:
-    - names:
-        - python-minimal
-        - ceph-common
-        - python3-rbd
-        - python3-rados
-
-openstack-cinder-ceph-secrets:
-  file.managed:
-    - name: /etc/ceph/ceph.client.cinder.keyring
-    - group: cinder
-    - mode: '0640'
-    - contents: |
-        [client.cinder]
-            key = {{ ceph_client_cinder_key }}
 {% endif %}
 
 # TODO: use native salt states

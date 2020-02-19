@@ -85,8 +85,6 @@ boneyard:
     external_net_pool_start: 10.250.18.49
     external_net_pool_end: 10.250.18.99
     enable_ceph: True
-    ceph_client_glance_key: 'AQA8gydeucSYJBAAzBagGj0/ewVAY7y+FuP2ww=='
-    ceph_client_cinder_key: 'AQBTgydeTX4WGxAAmQcLitmivqUuRCGPnrQWrw=='
     ceph_secret_uuid: 'cd609bed-350c-44cd-b2a9-c8d13834852b'
 
   openstack-t1*:

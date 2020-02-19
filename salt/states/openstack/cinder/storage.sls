@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import ceph, ceph_secret_uuid, ceph_client_cinder_key, admin_ip, mq, database, controller, memcache, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_secret_uuid, ceph_admin_path, admin_ip, mq, database, controller, memcache, passwords with context %}
 
 openstack-cinder-volume:
   pkg.installed:
@@ -77,13 +77,13 @@ openstack-cinder-volume-ceph-packages:
 openstack-cinder-volume-ceph-secrets:
   file.managed:
     - name: /etc/ceph/ceph.client.cinder.keyring
+    - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.cinder.keyring
     - group: cinder
     - mode: '0640'
-    - contents: |
-        [client.cinder]
-            key = {{ ceph_client_cinder_key }}
     - onchanges_in:
       - cmd: openstack-cinder-restart
+    - require:
+      - pkg: openstack-cinder-volume-ceph-packages
 
 {% else %}
 

@@ -94,6 +94,30 @@ ceph-configure-rgw:
         - salt: ceph-deploy-rgw
         - salt: ceph-configuration
 
+{% if salt['pillar.get']('openstack:enable_ceph') %}
+
+openstack-ceph-node:
+  salt.state:
+    - tgt: |
+        G@openstack:role:controller or
+        G@openstack:role:compute or
+        G@openstack:role:storage
+    - tgt_type: compound
+    - sls: ceph.node
+
+ceph-configure-openstack:
+  salt.state:
+    - tgt: 'ceph:role:deploy'
+    - tgt_type: grain
+    - sls: ceph.deploy.openstack
+    - require:
+        - salt: openstack-ceph-node
+        - salt: ceph-configure-rgw
+    - onchanges_in:
+        - salt: ceph-cluster-health
+
+{% endif %}
+
 ceph-cluster-health:
   salt.function:
     - name: cmd.run
@@ -104,3 +128,15 @@ ceph-cluster-health:
     - kwarg:
         cwd: /home/ceph-admin/ceph
         runas: ceph-admin
+    - onchanges:
+        - salt: install-ceph-deploy
+        - salt: prepare-ceph-nodes
+        - salt: install-ceph-mgr-modules
+        - salt: init-ceph-cluster
+        - salt: ceph-deploy-mon
+        - salt: ceph-deploy-admin
+        - salt: ceph-deploy-osd
+        - salt: ceph-deploy-mgr
+        - salt: ceph-deploy-rgw
+        - salt: ceph-configuration
+        - salt: ceph-configure-rgw

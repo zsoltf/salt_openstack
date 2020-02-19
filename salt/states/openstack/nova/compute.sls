@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import ceph, ceph_client_cinder_key, ceph_secret_uuid, admin_ip, controller, memcache, mq, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_admin_path, ceph_secret_uuid, admin_ip, controller, memcache, mq, passwords with context %}
 {% set nova_host = grains['id'] %}
 
 openstack-nova-compute:
@@ -70,10 +70,18 @@ openstack-nova-ceph-packages:
         - ceph-common
         - python3-rbd
 
+openstack-nova-ceph-cinder-secrets:
+  file.managed:
+    - name: /etc/ceph/ceph.client.cinder.key
+    - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.cinder.key
+    - group: cinder
+    - mode: '0640'
+    - require:
+        - pkg: openstack-nova-ceph-packages
+
 openstack-nova-ceph-secret-xml:
   cmd.run:
     - name: |
-        echo {{ ceph_client_cinder_key }} > cinder.keyring
         cat > secret.xml <<EOF
         <secret ephemeral='no' private='no'>
           <uuid>{{ ceph_secret_uuid }}</uuid>
@@ -83,9 +91,14 @@ openstack-nova-ceph-secret-xml:
           </secret>
         EOF
         virsh secret-define --file secret.xml
-        sudo virsh secret-set-value --secret {{ ceph_secret_uuid }} --base64 $(cat cinder.keyring)
-        rm cinder.keyring secret.xml
+        sudo virsh secret-set-value \
+          --secret {{ ceph_secret_uuid }} \
+          --base64 $(cat /etc/ceph/ceph.client.cinder.key)
+        rm secret.xml
     - unless: virsh secret-list | grep {{ ceph_secret_uuid }}
+    - require:
+        - file: openstack-nova-ceph-cinder-secrets
+
 {% endif %}
 
 openstack-nova-iscsi-service:

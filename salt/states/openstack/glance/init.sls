@@ -1,4 +1,4 @@
-{% from 'openstack/map.jinja' import ceph, ceph_client_glance_key, database, memcache, controller, passwords with context %}
+{% from 'openstack/map.jinja' import ceph, ceph_admin_path, database, memcache, controller, passwords with context %}
 {% set glance_host = grains['id'] %}
 
 openstack-glance:
@@ -48,6 +48,7 @@ openstack-glance-initial-config:
           show_image_direct_url: True
 
 {% if ceph %}
+
 openstack-glance-ceph-packages:
   pkg.installed:
     - names:
@@ -57,11 +58,12 @@ openstack-glance-ceph-packages:
 openstack-glance-ceph-secrets:
   file.managed:
     - name: /etc/ceph/ceph.client.glance.keyring
+    - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.glance.keyring
     - group: glance
     - mode: '0640'
-    - contents: |
-        [client.glance]
-          key = {{ ceph_client_glance_key }}
+    - require:
+        - pkg: openstack-glance-ceph-packages
+
 {% endif %}
 
 openstack-glance-bootstrap-db:

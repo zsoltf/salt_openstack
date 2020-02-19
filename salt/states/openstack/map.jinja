@@ -25,10 +25,12 @@
 {% set admin_ip = admin_ip|first %}
 
 {% set ceph = salt['pillar.get']('openstack:enable_ceph') %}
-{% set ceph_client_glance_key = salt['pillar.get']('openstack:ceph_client_glance_key') %}
-{% set ceph_client_cinder_key = salt['pillar.get']('openstack:ceph_client_cinder_key') %}
 {% set ceph_secret_uuid = salt['pillar.get']('openstack:ceph_secret_uuid') %}
 
+{% set ceph_admin = salt['mine.get']('ceph:role:admin', 'test.ping', 'grain') | default([]) | first %}
+{% if ceph_admin %}
+{% set ceph_admin_path = ceph_admin ~ "/home/ceph-admin/ceph" %}
+{% endif %}
 
 # macros
 

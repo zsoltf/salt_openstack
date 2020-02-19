@@ -2,6 +2,12 @@
 
 base:
   release: nautilus
+  openstack:
+    pools:
+      - backups
+      - images
+      - vms
+      - volumes
 
 boneyard:
 

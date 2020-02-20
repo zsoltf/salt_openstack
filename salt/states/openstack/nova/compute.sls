@@ -51,14 +51,15 @@ openstack-nova-compute-nova-config:
           enabled: 'true'
           server_listen: '0.0.0.0'
           server_proxyclient_address: '$my_ip'
-          nonvncproxy_base_url: http://{{ controller }}:6080/vnc_auto.html
+          novncproxy_base_url: http://{{ controller }}:6080/vnc_auto.html
 
 openstack-nova-compute-initial-config:
   ini.options_present:
     - name: /etc/nova/nova-compute.conf
     - sections:
         libvirt:
-          virt_type: qemu
+          virt_type: kvm
+          cpu_mode: host-passthrough
 {% if ceph %}
           rbd_user: cinder
           rbd_secret_uuid: {{ ceph_secret_uuid }}
@@ -74,7 +75,7 @@ openstack-nova-ceph-cinder-secrets:
   file.managed:
     - name: /etc/ceph/ceph.client.cinder.key
     - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.cinder.key
-    - group: cinder
+    - user: nova
     - mode: '0640'
     - require:
         - pkg: openstack-nova-ceph-packages

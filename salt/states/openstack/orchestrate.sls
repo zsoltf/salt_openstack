@@ -108,9 +108,9 @@ compute-node:
     - tgt: 'openstack:role:compute'
     - tgt_type: grain
     - sls:
+      - openstack.cinder.compute
       - openstack.nova.compute
       - openstack.neutron.compute
-      - openstack.cinder.compute
     - require:
       - salt: control-plane
 

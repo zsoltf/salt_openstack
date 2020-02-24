@@ -77,7 +77,7 @@ openstack-neutron-ml2-config:
           type_drivers: flat,vlan,vxlan
           tenant_network_types: vxlan
           mechanism_drivers: linuxbridge,l2population
-          extension_drivers: port_sercurity
+          extension_drivers: port_sercurity,dns_domain_ports
         ml2_type_flat:
           flat_networks: {{ provider_name }}
         ml2_type_vxlan:

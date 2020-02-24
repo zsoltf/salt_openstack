@@ -31,6 +31,11 @@ boneyard:
       - /dev/sdc
       - /dev/sdd
 
+openstack:
+  public_networks: '10.5.45.0/24,10.250.18.0/23'
+  storage_network: '10.5.45.0/24'
+
+
 {% endload %}
 {% set ceph = salt['grains.filter_by'](map, grain='datacenter', base='base') %}
 

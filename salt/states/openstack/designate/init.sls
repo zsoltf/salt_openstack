@@ -46,6 +46,27 @@ openstack-designate-initial-config:
           enable_host_header: True
           enabled_extensions_admin: quotas, reports
 
+openstack-designate-neutron-config:
+  ini.options_present:
+    - name: /etc/neutron/neutron.conf
+    - sections:
+        DEFAULT:
+          external_dns_driver: designate
+        designate:
+          url: http://{{ controller }}:9001/v2
+          auth_type: password
+          auth_url: http://{{ controller }}:5000
+          username: neutron
+          password: {{ passwords.neutron_pass }}
+          project_name: service
+          project_domain_name: Default
+          user_domain_name: Default
+          allow_reverse_dns_lookup: True
+          ipv4_ptr_zone_prefix_size: 24
+          ipv6_ptr_zone_prefix_size: 116
+          ptr_zone_email: admin@{{ salt['grains.get']('datacenter', 'openstack') ~ '.internal' }}
+          #cafile: /etc/ssl/certs/my_ca_cert
+
 
 openstack-designate-bootstrap:
   cmd.run:
@@ -139,6 +160,12 @@ openstack-designate-bootstrap-db:
         designate-manage pool update
     - onchanges:
         - file: openstack-designate-pool-config
+
+openstack-designate-neutron-service:
+  service.running:
+    - name: neutron-server
+    - watch:
+      - ini: openstack-designate-neutron-config
 
 #TODO: horizon dashboards are bad, they should go somewhere else
 openstack-designate-dashboard:

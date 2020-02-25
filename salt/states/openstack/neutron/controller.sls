@@ -57,6 +57,7 @@ openstack-neutron-initial-config:
           allow_overlapping_ips: 'true'
           notify_nova_on_port_status_changes: 'true'
           notify_nova_on_port_data_changes: 'true'
+          dns_domain: {{ salt['grains.get']('datacenter', 'openstack') ~ '.internal.' }}
         nova:
           auth_url: http://{{ controller }}:5000
           auth_type: password

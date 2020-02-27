@@ -93,8 +93,11 @@ boneyard:
   carrier-1*:
     provider_interface: eno2
 
-  carrier-3*:
+  carrier-2*:
     provider_interface: enp2s0f1
+
+  carrier-3*:
+    provider_interface: eno3
 
 test:
   base:

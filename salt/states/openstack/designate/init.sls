@@ -93,9 +93,10 @@ openstack-designate-bind-config:
         options {
           allow-new-zones yes;
           request-ixfr no;
-          listen-on port 53 { 127.0.0.1; };
+          listen-on port 53 {{ '{ ' ~ grains['fqdn_ip4']|first ~ '; }' }};
           recursion no;
-          allow-query { 127.0.0.1; };
+          allow-query { any; };
+          allow-query-cache { any; };
           directory "/var/cache/bind";
           dnssec-validation auto;
           auth-nxdomain no;
@@ -115,10 +116,10 @@ openstack-designate-pool-config:
           description: Default Pool
           attributes: {}
           ns_records:
-            - hostname: ns1-1.example.org.
+            - hostname: {{ grains['id'] ~ '.' ~ grains['dns']['domain'] ~ '.' }}
               priority: 1
           nameservers:
-            - host: 127.0.0.1
+            - host: {{ grains['fqdn_ip4']|first }}
               port: 53
           targets:
             - type: bind9

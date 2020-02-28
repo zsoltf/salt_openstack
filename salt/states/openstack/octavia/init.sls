@@ -65,13 +65,16 @@ openstack-octavia-initial-config:
         #TODO:
         controller_worker:
           # id of service project
-          amp_image_owner_id: 'd62005002dbf4ce0b0c2d7146e76f7bb'
+          #amp_image_owner_id: 'd62005002dbf4ce0b0c2d7146e76f7bb'
+          amp_image_owner_id: 'service'
           amp_image_tag: amphora
           amp_ssh_key_name: amphora_key
           # lb-mgmt-sec-grp-id
-          amp_secgroup_list: 'd1fc4957-1809-4bb2-94f3-95345b2fdec4'
+          #amp_secgroup_list: 'd1fc4957-1809-4bb2-94f3-95345b2fdec4'
+          amp_secgroup_list: 'lb-mgmt-sec-grp'
           # lb-mgmt-net-id
-          amp_boot_network_list: 'c4e5acd3-ab3f-4d2d-8301-9559430384ec'
+          #amp_boot_network_list: 'c4e5acd3-ab3f-4d2d-8301-9559430384ec'
+          amp_boot_network_list: 'lb-mgmt-net'
           amp_flavor_id: 200
           network_driver: allowed_address_pairs_driver
           compute_driver: compute_nova_driver
@@ -128,6 +131,10 @@ openstack-octavia-do-things:
         openstack security group create lb-health-mgr-sec-grp
         openstack security group rule create --protocol udp --dst-port 5555 lb-health-mgr-sec-grp
         openstack keypair create --public-key ~/.ssh/id_rsa.pub amphora_key
+        openstack network create lb-mgmt-net
+        openstack subnet create --subnet-range $OCTAVIA_MGMT_SUBNET \
+          --allocation-pool start=$OCTAVIA_MGMT_SUBNET_START,end=$OCTAVIA_MGMT_SUBNET_END \
+          --network lb-mgmt-net lb-mgmt-subnet
     - env:
         OS_PROJECT_DOMAIN_NAME: Default
         OS_USER_DOMAIN_NAME: Default
@@ -138,9 +145,65 @@ openstack-octavia-do-things:
         OS_IDENTITY_API_VERSION: 3
         OS_IMAGE_API_VERSION: 2
         OS_VOLUME_API_VERSION: 3
+        OCTAVIA_MGMT_SUBNET: 172.16.0.0/12
+        OCTAVIA_MGMT_SUBNET_START: 172.16.0.100
+        OCTAVIA_MGMT_SUBNET_END: 172.16.31.254
+        OCTAVIA_MGMT_PORT_IP: 172.16.0.2
     - onchanges:
       - cmd: openstack-octavia-bootstrap
 
+openstack-octavia-do-things2:
+  cmd.run:
+    - name: |
+        SUBNET_ID=$(openstack subnet show lb-mgmt-subnet -c id -f value)
+
+        MGMT_PORT_MAC=$( \
+          openstack port show octavia-health-manager-listen-port -c mac_address -f value || \
+          openstack port create \
+            --security-group lb-health-mgr-sec-grp --device-owner Octavia:health-mgr \
+            --host=$(hostname) -c mac_address -f value --network lb-mgmt-net \
+            --fixed-ip subnet=$SUBNET_ID,ip-address=$OCTAVIA_MGMT_PORT_IP \
+            octavia-health-manager-listen-port )
+
+        NETID=$(openstack network show lb-mgmt-net -c id -f value)
+        BRNAME=brq$(echo $NETID|cut -c 1-11)
+
+        touch /opt/octavia-interface.sh
+        chmod +x /opt/octavia-interface.sh
+        cat > /opt/octavia-interface.sh << END
+        #!/bin/bash
+        set -ex
+
+        if [ "\$1" == "start" ]; then
+          ip link add o-hm0 type veth peer name o-bhm0
+          brctl addif $BRNAME o-bhm0
+          ip link set o-bhm0 up
+          ip link set dev o-hm0 address $MGMT_PORT_MAC
+          ip link set o-hm0 up
+          iptables -I INPUT -i o-hm0 -p udp --dport 5555 -j ACCEPT
+        elif [ "\$1" == "stop" ]; then
+          ip link del o-hm0
+        else
+          brctl show $BRNAME
+          ip a s dev o-hm0
+        fi
+        END
+
+    - env:
+        OS_PROJECT_DOMAIN_NAME: Default
+        OS_USER_DOMAIN_NAME: Default
+        OS_PROJECT_NAME: service
+        OS_USERNAME: octavia
+        OS_PASSWORD: {{ passwords.octavia_pass }}
+        OS_AUTH_URL: http://{{ controller }}:5000
+        OS_IDENTITY_API_VERSION: 3
+        OS_IMAGE_API_VERSION: 2
+        OS_VOLUME_API_VERSION: 3
+        OCTAVIA_MGMT_SUBNET: 172.16.0.0/12
+        OCTAVIA_MGMT_SUBNET_START: 172.16.0.100
+        OCTAVIA_MGMT_SUBNET_END: 172.16.31.254
+        OCTAVIA_MGMT_PORT_IP: 172.16.0.2
+    - creates: /opt/octavia-interface.sh
 
 #TODO: dogtag or https://docs.openstack.org/octavia/latest/admin/guides/certificates.html
 #NOTE: this should not be used for normal deployments... it's just to get me over the hump
@@ -164,87 +227,48 @@ openstack-octavia-certs:
     - onchanges:
       - cmd: openstack-octavia-bootstrap
 
-openstack-octavia-build-image:
-  cmd.run:
-    - name: |
-        apt-get -qq install -y python3-pip
-        apt-get -qq install -y qemu-utils git kpartx debootstrap
-        git clone https://opendev.org/openstack/octavia.git
-        cd octavia/diskimage-create
-        pip3 install -r requirements.txt
-        ./diskimage-create.sh
-    - creates: /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2
+#openstack-octavia-build-image:
+#  cmd.run:
+#    - name: |
+#        apt-get -qq install -y python3-pip
+#        apt-get -qq install -y qemu-utils git kpartx debootstrap
+#        git clone https://opendev.org/openstack/octavia.git
+#        cd octavia/diskimage-create
+#        pip3 install -r requirements.txt
+#        ./diskimage-create.sh
+#    - creates: /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2
+#
+#openstack-octavia-upload-image:
+#  cmd.run:
+#    - name: |
+#        openstack image create --disk-format qcow2 \
+#          --container-format bare --private --tag amphora \
+#          --file /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2 amphora-x64-haproxy
+#        openstack flavor create --id 200 --vcpus 1 --ram 1024 \
+#          --disk 2 "amphora" --private
+#    - env:
+#        OS_PROJECT_DOMAIN_NAME: Default
+#        OS_USER_DOMAIN_NAME: Default
+#        OS_PROJECT_NAME: service
+#        OS_USERNAME: octavia
+#        OS_PASSWORD: {{ passwords.octavia_pass }}
+#        OS_AUTH_URL: http://{{ controller }}:5000
+#        OS_IDENTITY_API_VERSION: 3
+#        OS_IMAGE_API_VERSION: 2
+#        OS_VOLUME_API_VERSION: 3
+#    - onchanges:
+#      - cmd: openstack-octavia-build-image
 
-openstack-octavia-upload-image:
-  cmd.run:
-    - name: |
-        openstack image create --disk-format qcow2 \
-          --container-format bare --private --tag amphora \
-          --file /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2 amphora-x64-haproxy
-        openstack flavor create --id 200 --vcpus 1 --ram 1024 \
-          --disk 2 "amphora" --private
-    - env:
-        OS_PROJECT_DOMAIN_NAME: Default
-        OS_USER_DOMAIN_NAME: Default
-        OS_PROJECT_NAME: service
-        OS_USERNAME: octavia
-        OS_PASSWORD: {{ passwords.octavia_pass }}
-        OS_AUTH_URL: http://{{ controller }}:5000
-        OS_IDENTITY_API_VERSION: 3
-        OS_IMAGE_API_VERSION: 2
-        OS_VOLUME_API_VERSION: 3
-    - onchanges:
-      - cmd: openstack-octavia-build-image
-
-
-openstack-octavia-network-there-has-to-be-a-better-way:
-  test.nop:
-    - name: |
-
-        openstack network create lb-mgmt-net
-        openstack subnet create --subnet-range $OCTAVIA_MGMT_SUBNET --allocation-pool \
-        start=$OCTAVIA_MGMT_SUBNET_START,end=$OCTAVIA_MGMT_SUBNET_END \
-        --network lb-mgmt-net lb-mgmt-subnet
-
-        SUBNET_ID=$(openstack subnet show lb-mgmt-subnet -f value -c id)
-        PORT_FIXED_IP="--fixed-ip subnet=$SUBNET_ID,ip-address=$OCTAVIA_MGMT_PORT_IP"
-
-        MGMT_PORT_ID=$(openstack port create --security-group \
-        lb-health-mgr-sec-grp --device-owner Octavia:health-mgr \
-        --host=$(hostname) -c id -f value --network lb-mgmt-net \
-        $PORT_FIXED_IP octavia-health-manager-listen-port)
-
-        MGMT_PORT_MAC=$(openstack port show -c mac_address -f value \
-        $MGMT_PORT_ID)
-
-        MGMT_PORT_IP=$(openstack port show -f yaml -c fixed_ips \
-        $MGMT_PORT_ID | awk '{FS=",|";gsub(",","");gsub("'\''",""); \
-        for(line = 1; line <= NF; ++line) {if ($line ~ /^- ip_address:/) \
-        {split($line, word, " ");if (ENVIRON["IPV6_ENABLED"] == "" && word[3] ~ /\./) \
-        print word[3];if (ENVIRON["IPV6_ENABLED"] != "" && word[3] ~ /:/) print word[3];} \
-        else {split($line, word, " ");for(ind in word) {if (word[ind] ~ /^ip_address=/) \
-        {split(word[ind], token, "=");if (ENVIRON["IPV6_ENABLED"] == "" && token[2] ~ /\./) \
-        print token[2];if (ENVIRON["IPV6_ENABLED"] != "" && token[2] ~ /:/) print token[2];}}}}}')
-
-        sudo ip link add o-hm0 type veth peer name o-bhm0
-        NETID=$(openstack network show lb-mgmt-net -c id -f value)
-        BRNAME=brq$(echo $NETID|cut -c 1-11)
-        sudo brctl addif $BRNAME o-bhm0
-        sudo ip link set o-bhm0 up
-
-        sudo ip link set dev o-hm0 address $MGMT_PORT_MAC
-        sudo iptables -I INPUT -i o-hm0 -p udp --dport 5555 -j ACCEPT
-        sudo dhclient -v o-hm0 -cf /etc/dhcp/octavia
-
-    - env:
-        OCTAVIA_MGMT_SUBNET: 172.16.0.0/12
-        OCTAVIA_MGMT_SUBNET_START: 172.16.0.100
-        OCTAVIA_MGMT_SUBNET_END: 172.16.31.254
-        OCTAVIA_MGMT_PORT_IP: 172.16.0.2
 
 openstack-octavia-network-beast-1:
+  file.managed:
+    - name: /etc/systemd/network/o-hm0.network
+  cmd.run:
+    - name: systemctl daemon-reload
   ini.options_present:
     - name: /etc/systemd/network/o-hm0.network
+    - require:
+        - file: openstack-octavia-network-beast-1
     - sections:
         Match:
           name: o-hm0
@@ -252,8 +276,14 @@ openstack-octavia-network-beast-1:
           DHCP: 'yes'
 
 openstack-octavia-network-beast-2:
+  file.managed:
+    - name: /etc/systemd/system/octavia-interface.service
+  cmd.run:
+    - name: systemctl daemon-reload
   ini.options_present:
     - name: /etc/systemd/system/octavia-interface.service
+    - require:
+        - file: openstack-octavia-network-beast-2
     - sections:
         Unit:
           Description: Octavia Interface Creator
@@ -266,37 +296,17 @@ openstack-octavia-network-beast-2:
           ExecStop: /opt/octavia-interface.sh stop
         Install:
           WantedBy: multi-user.target
-
-openstack-octavia-network-beast-3:
-  file.managed:
-    - name: /opt/octavia-interface.sh
-    - contents: |
-        #!/bin/bash
-
-        set -ex
-
-        # TODO: replace with actual values
-        MAC=$MGMT_PORT_MAC
-        BRNAME=$BRNAME
-
-        if [ "$1" == "start" ]; then
-          ip link add o-hm0 type veth peer name o-bhm0
-          brctl addif $BRNAME o-bhm0
-          ip link set o-bhm0 up
-          ip link set dev o-hm0 address $MAC
-          ip link set o-hm0 up
-          iptables -I INPUT -i o-hm0 -p udp --dport 5555 -j ACCEPT
-        elif [ "$1" == "stop" ]; then
-          ip link del o-hm0
-        else
-          brctl show $BRNAME
-          ip a s dev o-hm0
-        fi
+  service.running:
+    - name: octavia-interface
+    - enable: True
+    - require:
+        - cmd: openstack-octavia-network-beast-2
+        - ini: openstack-octavia-network-beast-2
 
 
-# need BRNAME and MGMT_PORT_MAC for bridge interface script
 # need amp_image_owner_id, amp_secgroup_list, amp_boot_network_list:
 # update controller_worker section of /etc/octavia/octavia.conf with actual ids
+
 # need 3 systemd files to keep the network beast afloat
 # https://docs.openstack.org/octavia/latest/install/install-ubuntu.html
 

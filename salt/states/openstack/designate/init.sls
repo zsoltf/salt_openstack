@@ -93,7 +93,7 @@ openstack-designate-bind-config:
         options {
           allow-new-zones yes;
           request-ixfr no;
-          listen-on port 53 {{ '{ ' ~ grains['fqdn_ip4']|first ~ '; }' }};
+          listen-on port 53 {{ '{ 127.0.0.1; ' ~ grains['fqdn_ip4']|first ~ '; }' }};
           recursion no;
           allow-query { any; };
           allow-query-cache { any; };

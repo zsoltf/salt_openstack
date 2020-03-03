@@ -26,10 +26,10 @@
 
 {% set ceph = salt['pillar.get']('openstack:enable_ceph') %}
 {% set ceph_secret_uuid = salt['pillar.get']('openstack:ceph_secret_uuid') %}
-
-{% set ceph_admin = salt['mine.get']('ceph:role:admin', 'test.ping', 'grain') | default([]) | first %}
+{% set ceph_admin = salt['mine.get']('ceph:role:admin', 'test.ping', 'grain') | default([]) %}
 {% if ceph_admin %}
-{% set ceph_admin_path = ceph_admin ~ "/home/ceph-admin/ceph" %}
+  {% set ceph_admin = ceph_admin[0] %}
+  {% set ceph_admin_path = ceph_admin ~ "/home/ceph-admin/ceph" %}
 {% endif %}
 
 # macros

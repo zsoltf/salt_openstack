@@ -43,8 +43,12 @@ ceph:
   {{ ceph|yaml }}
 
 
+{% if ceph.get('storage_network') %}
+
 # network mines
 mine_functions:
   storage_network:
     mine_function: network.ip_addrs
-    cidr: {{ ceph['storage_network'] }}
+    cidr: {{ ceph.get('storage_network') }}
+
+{% endif %}

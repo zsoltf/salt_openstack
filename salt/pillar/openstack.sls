@@ -74,6 +74,8 @@ default:
       magnum_domain_pass: Vaigh1ie
       freezer_db_pass: Ool1Shoo
       freezer_pass: awooSh0o
+      karbor_pass: XeemaNg9
+      karbor_db_pass: eYainah4
 
 boneyard:
   base:

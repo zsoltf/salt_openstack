@@ -72,6 +72,8 @@ default:
       magnum_pass: ohs2Aedi
       magnum_db_pass: NooS1xei
       magnum_domain_pass: Vaigh1ie
+      freezer_db_pass: Ool1Shoo
+      freezer_pass: awooSh0o
 
 boneyard:
   base:

@@ -3,20 +3,21 @@
 openstack-octavia:
   pkg.installed:
     - names:
-        - octavia-api
-        - octavia-health-manager
-        - octavia-housekeeping
-        - octavia-worker
-        - python3-octavia
-        - python3-octaviaclient
+      - octavia-api
+      - octavia-health-manager
+      - octavia-housekeeping
+      - octavia-worker
+      - python3-octavia
+      - python3-octaviaclient
+      - crudini
 
-openstack-octavia-clear-comments:
-  cmd.run:
-    - name: |
-        sed -i /^#/d /etc/octavia/octavia.conf
-        sed -i /^$/d /etc/octavia/octavia.conf
-    - onchanges:
-      - pkg: openstack-octavia
+#openstack-octavia-clear-comments:
+#  cmd.run:
+#    - name: |
+#        sed -i /^#/d /etc/octavia/octavia.conf
+#        sed -i /^$/d /etc/octavia/octavia.conf
+#    - onchanges:
+#      - pkg: openstack-octavia
 
 openstack-octavia-initial-config:
   ini.options_present:
@@ -24,6 +25,7 @@ openstack-octavia-initial-config:
     - sections:
         DEFAULT:
           transport_url: rabbit://openstack:{{ passwords.rabbit_pass }}@{{ mq }}:5672/
+          #debug: True
         database:
           connection: 'mysql+pymysql://octavia:{{ passwords.octavia_db_pass }}@{{ database }}/octavia'
         oslo_messaging:
@@ -51,6 +53,7 @@ openstack-octavia-initial-config:
           username: octavia
           password: {{ passwords.octavia_pass }}
         certificates:
+          cert_generator: local_cert_generator
           server_certs_key_passphrase: insecure-key-do-not-use-this-key
           ca_private_key_passphrase: not-secure-passphrase
           ca_private_key: /etc/octavia/certs/private/server_ca.key.pem
@@ -62,19 +65,15 @@ openstack-octavia-initial-config:
           bind_port: 5555
           bind_ip: 172.16.0.2
           controller_ip_port_list: 172.16.0.2:5555
-        #TODO:
         controller_worker:
           # id of service project
-          #amp_image_owner_id: 'd62005002dbf4ce0b0c2d7146e76f7bb'
-          amp_image_owner_id: 'service'
+          #amp_image_owner_id: 'service'
           amp_image_tag: amphora
           amp_ssh_key_name: amphora_key
           # lb-mgmt-sec-grp-id
-          #amp_secgroup_list: 'd1fc4957-1809-4bb2-94f3-95345b2fdec4'
-          amp_secgroup_list: 'lb-mgmt-sec-grp'
+          #amp_secgroup_list: 'lb-mgmt-sec-grp'
           # lb-mgmt-net-id
-          #amp_boot_network_list: 'c4e5acd3-ab3f-4d2d-8301-9559430384ec'
-          amp_boot_network_list: 'lb-mgmt-net'
+          #amp_boot_network_list: 'lb-mgmt-net'
           amp_flavor_id: 200
           network_driver: allowed_address_pairs_driver
           compute_driver: compute_nova_driver
@@ -154,6 +153,8 @@ openstack-octavia-do-things:
 
 openstack-octavia-do-things2:
   cmd.run:
+    - require:
+      - file: openstack-octavia-network-interface
     - name: |
         SUBNET_ID=$(openstack subnet show lb-mgmt-subnet -c id -f value)
 
@@ -168,11 +169,23 @@ openstack-octavia-do-things2:
         NETID=$(openstack network show lb-mgmt-net -c id -f value)
         BRNAME=brq$(echo $NETID|cut -c 1-11)
 
+        IMG_OWNER_ID=$(openstack project show service -c id -f value)
+        crudini --set /etc/octavia/octavia.conf controller_worker amp_image_owner_id $IMG_OWNER_ID
+
+        SECGROUP_ID=$(openstack security group show lb-mgmt-sec-grp -c id -f value)
+        crudini --set /etc/octavia/octavia.conf controller_worker amp_secgroup_list $SECGROUP_ID
+
+        crudini --set /etc/octavia/octavia.conf controller_worker amp_boot_network_list $NETID
+
+        crudini --set /etc/systemd/system/octavia-interface.service Service ExecStartPre "/usr/bin/perl -e 'sleep 1 until -e \"/sys/class/net/$BRNAME\"'"
+
         touch /opt/octavia-interface.sh
         chmod +x /opt/octavia-interface.sh
         cat > /opt/octavia-interface.sh << END
         #!/bin/bash
         set -ex
+
+        #TODO: check if the bridge exists
 
         if [ "\$1" == "start" ]; then
           ip link add o-hm0 type veth peer name o-bhm0
@@ -181,6 +194,7 @@ openstack-octavia-do-things2:
           ip link set dev o-hm0 address $MGMT_PORT_MAC
           ip link set o-hm0 up
           iptables -I INPUT -i o-hm0 -p udp --dport 5555 -j ACCEPT
+          ip addr add $OCTAVIA_MGMT_ADDR dev o-hm0
         elif [ "\$1" == "stop" ]; then
           ip link del o-hm0
         else
@@ -203,6 +217,7 @@ openstack-octavia-do-things2:
         OCTAVIA_MGMT_SUBNET_START: 172.16.0.100
         OCTAVIA_MGMT_SUBNET_END: 172.16.31.254
         OCTAVIA_MGMT_PORT_IP: 172.16.0.2
+        OCTAVIA_MGMT_ADDR: 172.16.0.2/12
     - creates: /opt/octavia-interface.sh
 
 #TODO: dogtag or https://docs.openstack.org/octavia/latest/admin/guides/certificates.html
@@ -222,68 +237,73 @@ openstack-octavia-certs:
         cp -p etc/octavia/certs/client.cert-and-key.pem /etc/octavia/certs/private
         chmod 440 /etc/octavia/certs/server_ca.cert.pem
         chmod 440 /etc/octavia/certs/private/server_ca.key.pem
-        chgrp octavia /etc/octavia/certs/server_ca.cert.pem
-        chgrp octavia /etc/octavia/certs/private/server_ca.key.pem
+        chown -R octavia:octavia /etc/octavia
     - onchanges:
       - cmd: openstack-octavia-bootstrap
 
-#openstack-octavia-build-image:
-#  cmd.run:
-#    - name: |
-#        apt-get -qq install -y python3-pip
-#        apt-get -qq install -y qemu-utils git kpartx debootstrap
-#        git clone https://opendev.org/openstack/octavia.git
-#        cd octavia/diskimage-create
-#        pip3 install -r requirements.txt
-#        ./diskimage-create.sh
-#    - creates: /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2
-#
-#openstack-octavia-upload-image:
-#  cmd.run:
-#    - name: |
-#        openstack image create --disk-format qcow2 \
-#          --container-format bare --private --tag amphora \
-#          --file /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2 amphora-x64-haproxy
-#        openstack flavor create --id 200 --vcpus 1 --ram 1024 \
-#          --disk 2 "amphora" --private
-#    - env:
-#        OS_PROJECT_DOMAIN_NAME: Default
-#        OS_USER_DOMAIN_NAME: Default
-#        OS_PROJECT_NAME: service
-#        OS_USERNAME: octavia
-#        OS_PASSWORD: {{ passwords.octavia_pass }}
-#        OS_AUTH_URL: http://{{ controller }}:5000
-#        OS_IDENTITY_API_VERSION: 3
-#        OS_IMAGE_API_VERSION: 2
-#        OS_VOLUME_API_VERSION: 3
-#    - onchanges:
-#      - cmd: openstack-octavia-build-image
-
-
-openstack-octavia-network-beast-1:
-  file.managed:
-    - name: /etc/systemd/network/o-hm0.network
+openstack-octavia-build-image:
   cmd.run:
-    - name: systemctl daemon-reload
-  ini.options_present:
-    - name: /etc/systemd/network/o-hm0.network
-    - require:
-        - file: openstack-octavia-network-beast-1
-    - sections:
-        Match:
-          name: o-hm0
-        Network:
-          DHCP: 'yes'
+    - name: |
+        apt-get -qq install -y python3-pip
+        apt-get -qq install -y qemu-utils git kpartx debootstrap
+        git clone -b stable/train https://opendev.org/openstack/octavia.git
+        cd octavia/diskimage-create
+        pip3 install -r requirements.txt
+        ./diskimage-create.sh
+    - creates: /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2
+    - env:
+        DIB_REPOREF_amphora_agent: stable/train
+        DIB_REPOLOCATION_amphora_agent: https://opendev.org/openstack/octavia
+
+openstack-octavia-upload-image:
+  cmd.run:
+    - name: |
+        openstack image create --disk-format qcow2 \
+          --container-format bare --private --tag amphora \
+          --file /root/octavia/diskimage-create/amphora-x64-haproxy.qcow2 amphora-x64-haproxy
+        openstack flavor create --id 200 --vcpus 1 --ram 1024 \
+          --disk 2 "amphora" --private
+    - unless: openstack image show amphora-x64-haproxy
+    - env:
+        OS_PROJECT_DOMAIN_NAME: Default
+        OS_USER_DOMAIN_NAME: Default
+        OS_PROJECT_NAME: service
+        OS_USERNAME: octavia
+        OS_PASSWORD: {{ passwords.octavia_pass }}
+        OS_AUTH_URL: http://{{ controller }}:5000
+        OS_IDENTITY_API_VERSION: 3
+        OS_IMAGE_API_VERSION: 2
+        OS_VOLUME_API_VERSION: 3
+
+
+#openstack-octavia-network-beast-1:
+#  file.managed:
+#    - name: /etc/systemd/network/o-hm0.network
+#  cmd.run:
+#    - name: systemctl daemon-reload
+#  ini.options_present:
+#    - name: /etc/systemd/network/o-hm0.network
+#    - require:
+#        - file: openstack-octavia-network-beast-1
+#    - sections:
+#        Match:
+#          name: o-hm0
+#        Network:
+#          DHCP: 'yes'
+
+openstack-octavia-network-interface:
+  file.managed:
+    - name: /etc/systemd/system/octavia-interface.service
 
 openstack-octavia-network-beast-2:
-  file.managed:
-    - name: /etc/systemd/system/octavia-interface.service
   cmd.run:
     - name: systemctl daemon-reload
+    - onchanges:
+      - ini: openstack-octavia-network-beast-2
   ini.options_present:
     - name: /etc/systemd/system/octavia-interface.service
     - require:
-        - file: openstack-octavia-network-beast-2
+        - file: openstack-octavia-network-interface
     - sections:
         Unit:
           Description: Octavia Interface Creator
@@ -296,12 +316,6 @@ openstack-octavia-network-beast-2:
           ExecStop: /opt/octavia-interface.sh stop
         Install:
           WantedBy: multi-user.target
-  service.running:
-    - name: octavia-interface
-    - enable: True
-    - require:
-        - cmd: openstack-octavia-network-beast-2
-        - ini: openstack-octavia-network-beast-2
 
 
 # need amp_image_owner_id, amp_secgroup_list, amp_boot_network_list:
@@ -310,25 +324,35 @@ openstack-octavia-network-beast-2:
 # need 3 systemd files to keep the network beast afloat
 # https://docs.openstack.org/octavia/latest/install/install-ubuntu.html
 
-#openstack-octavia-bootstrap-db:
-#  cmd.run:
-#    - name: |
-#        octavia-db-manage --config-file /etc/octavia/octavia.conf upgrade head
-#        systemctl restart octavia-api octavia-health-manager octavia-housekeeping octavia-worker
-#    - onchanges:
-#        - ini: openstack-octavia-initial-config
-#        - cmd: openstack-octavia-bootstrap
+openstack-octavia-bootstrap-db:
+  cmd.run:
+    - name: |
+        octavia-db-manage --config-file /etc/octavia/octavia.conf upgrade head
+        systemctl restart octavia-api octavia-health-manager octavia-housekeeping octavia-worker octavia-interface
+    - env:
+        OS_PROJECT_DOMAIN_NAME: Default
+        OS_USER_DOMAIN_NAME: Default
+        OS_PROJECT_NAME: service
+        OS_USERNAME: octavia
+        OS_PASSWORD: {{ passwords.octavia_pass }}
+        OS_AUTH_URL: http://{{ controller }}:5000
+        OS_IDENTITY_API_VERSION: 3
+        OS_IMAGE_API_VERSION: 2
+        OS_VOLUME_API_VERSION: 3
+    - onchanges:
+        - ini: openstack-octavia-initial-config
+        - cmd: openstack-octavia-bootstrap
 
 
-##TODO: horizon dashboards are bad, they should go somewhere else
-#openstack-octavia-dashboard:
-#  cmd.run:
-#    - name: |
-#        apt-get -qq install -y python3-pip
-#        pip3 install -q octavia-dashboard
-#        cp /usr/local/lib/python3.6/dist-packages/octavia_dashboard/enabled/_1*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-#        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
-#        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
-#        service apache2 restart
-#    - onchanges:
-#      - cmd: openstack-octavia-bootstrap-db
+#TODO: horizon dashboards are bad, they should go somewhere else
+openstack-octavia-dashboard:
+  cmd.run:
+    - name: |
+        apt-get -qq install -y python3-pip
+        pip3 install -q octavia-dashboard
+        cp /usr/local/lib/python3.6/dist-packages/octavia_dashboard/enabled/_1*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+        service apache2 restart
+    - onchanges:
+      - cmd: openstack-octavia-bootstrap-db

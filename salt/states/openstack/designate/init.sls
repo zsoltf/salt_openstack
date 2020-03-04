@@ -1,4 +1,5 @@
 {% from 'openstack/map.jinja' import database, mq, memcache, controller, passwords with context %}
+{% set domain = grains['dns']['domain']|default('stack') %}
 
 openstack-designate:
   pkg.installed:
@@ -116,7 +117,7 @@ openstack-designate-pool-config:
           description: Default Pool
           attributes: {}
           ns_records:
-            - hostname: {{ grains['id'] ~ '.' ~ grains['dns']['domain'] ~ '.' }}
+            - hostname: {{ grains['id'] ~ '.' ~ domain ~ '.' }}
               priority: 1
           nameservers:
             - host: {{ grains['fqdn_ip4']|first }}

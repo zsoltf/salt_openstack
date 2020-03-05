@@ -75,6 +75,8 @@ create-sql-tables:
       - openstack.senlin.sql
       - openstack.octavia.sql
       - openstack.vitrage.sql
+      - openstack.karbor.sql
+      - openstack.watcher.sql
     - require:
       - salt: sql-data-node
 
@@ -99,6 +101,8 @@ control-plane:
       - openstack.senlin
       - openstack.octavia
       - openstack.vitrage
+      - openstack.karbor
+      - openstack.watcher
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

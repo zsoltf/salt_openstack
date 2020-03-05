@@ -3,7 +3,7 @@
 openstack-karbor-components:
   cmd.run:
     - name: |
-        git clone -b stable/train https://git.openstack.org/openstack/karbor
+        git clone https://git.openstack.org/openstack/karbor
         cd karbor
         pip3 install -r requirements.txt
         pip3 install -e .
@@ -16,7 +16,7 @@ openstack-karbor-components:
         cp etc/policy.yaml.sample /etc/karbor/policy.yaml
         cp -r etc/providers.d /etc/karbor
         mkdir /var/log/karbor
-    - unless: whereis karbor-api
+    - creates: /etc/karbor/karbor.conf
 
 openstack-karbor-client-components:
   cmd.run:

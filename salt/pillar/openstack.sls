@@ -78,6 +78,8 @@ default:
       karbor_db_pass: eYainah4
       watcher_pass: phiGh8ba
       watcher_db_pass: peim5oPu
+      vitrage_pass: eeP7quox
+      vitrage_db_pass: xeCheex0
 
 boneyard:
   base:

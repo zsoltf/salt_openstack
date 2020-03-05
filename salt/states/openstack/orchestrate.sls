@@ -74,6 +74,7 @@ create-sql-tables:
       - openstack.designate.sql
       - openstack.senlin.sql
       - openstack.octavia.sql
+      - openstack.vitrage.sql
     - require:
       - salt: sql-data-node
 
@@ -97,6 +98,7 @@ control-plane:
       - openstack.designate
       - openstack.senlin
       - openstack.octavia
+      - openstack.vitrage
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

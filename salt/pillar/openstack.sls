@@ -80,6 +80,7 @@ default:
       watcher_db_pass: peim5oPu
       vitrage_pass: eeP7quox
       vitrage_db_pass: xeCheex0
+      swift_pass: Ohdeibo5
 
 boneyard:
   base:
@@ -93,6 +94,8 @@ boneyard:
     external_net_pool_start: 10.250.18.49
     external_net_pool_end: 10.250.18.99
     enable_ceph: True
+    swift_hash_prefix: 'bac13076-5f2d-11ea-992d-53ed90d6c376'
+    swift_hash_suffix: 'c0698a50-5f2d-11ea-b943-1b6b17dc1858'
     ceph_secret_uuid: 'cd609bed-350c-44cd-b2a9-c8d13834852b'
 
   openstack-t1*:

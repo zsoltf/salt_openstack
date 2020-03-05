@@ -76,6 +76,8 @@ default:
       freezer_pass: awooSh0o
       karbor_pass: XeemaNg9
       karbor_db_pass: eYainah4
+      watcher_pass: phiGh8ba
+      watcher_db_pass: peim5oPu
 
 boneyard:
   base:

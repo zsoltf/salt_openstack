@@ -21,7 +21,7 @@ openstack-karbor-components:
 openstack-karbor-client-components:
   cmd.run:
     - name: |
-        git clone https://git.openstack.org/openstack/python-karborclient.git
+        git clone -b stable/train https://git.openstack.org/openstack/python-karborclient.git
         cd python-karborclient
         python3 setup.py install
     - onchanges:

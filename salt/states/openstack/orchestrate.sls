@@ -100,9 +100,9 @@ control-plane:
       - openstack.designate
       - openstack.senlin
       - openstack.octavia
-      - openstack.vitrage
-      - openstack.karbor
-      - openstack.watcher
+      #- openstack.vitrage
+      #- openstack.karbor
+      #- openstack.watcher
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node

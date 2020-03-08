@@ -55,12 +55,12 @@ openstack-freezer-bootstrap:
         freezer_pass: {{ passwords.freezer_pass }}
         OS_CLOUD: test
 
-#openstack-freezer-bootstrap-db:
-#  cmd.run:
-#    - name: |
-#        freezer-manage db sync
-#    - onchanges:
-#        - cmd: openstack-freezer-bootstrap
+openstack-freezer-bootstrap-db:
+  cmd.run:
+    - name: |
+        freezer-manage db sync
+    - onchanges:
+        - cmd: openstack-freezer-bootstrap
 
 
 openstack-freezer-api-service:

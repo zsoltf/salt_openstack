@@ -103,17 +103,17 @@ openstack-{{ service }}-service:
 
 
 #TODO: horizon dashboards are bad, they should go somewhere else
-openstack-vitrage-dashboard:
-  cmd.run:
-    - name: |
-        apt-get -qq install -y python3-pip
-        git clone -b stable/train https://github.com/openstack/vitrage-dashboard
-        cd vitrage-dashboard
-        pip3 install -r requirements.txt
-        pip3 install .
-        cp vitrage_dashboard/enabled/_[1-9]* /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
-        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
-        service apache2 restart
-    - onchanges:
-      - cmd: openstack-vitrage-bootstrap
+#openstack-vitrage-dashboard:
+#  cmd.run:
+#    - name: |
+#        apt-get -qq install -y python3-pip
+#        git clone -b stable/train https://github.com/openstack/vitrage-dashboard
+#        cd vitrage-dashboard
+#        pip3 install -r requirements.txt
+#        pip3 install .
+#        cp vitrage_dashboard/enabled/_[1-9]* /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+#        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+#        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+#        service apache2 restart
+#    - onchanges:
+#      - cmd: openstack-vitrage-bootstrap

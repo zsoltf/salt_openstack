@@ -122,7 +122,7 @@ openstack-{{ service }}-service:
 
 
 #TODO: horizon dashboards are bad, they should go somewhere else
-openstack-heat-dashboard:
+openstack-karbor-dashboard:
   cmd.run:
     - name: |
         apt-get -qq install -y python3-pip

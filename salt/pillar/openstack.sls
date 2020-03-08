@@ -81,6 +81,8 @@ default:
       vitrage_pass: eeP7quox
       vitrage_db_pass: xeCheex0
       swift_pass: Ohdeibo5
+      masakari_pass: eavooj8O
+      masakari_db_pass: koh7Ua3f
 
 boneyard:
   base:
@@ -111,8 +113,6 @@ boneyard:
     provider_interface: eno3
 
 test:
-  base:
-    admin_network: 192.168.0.0/16
   stack-storage*:
     cinder_volumes:
       - /dev/vdb

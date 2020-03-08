@@ -115,6 +115,22 @@ stack-dev.img: bionic.img devstack.yaml
 	  --network network=default,model=virtio \
 	  --import
 
+stack-horizon-centos.img: centos.img horizon-centos.yaml
+	cloud-localds horizon-centos.iso horizon-centos.yaml && \
+	cp centos.img stack-horizon-centos.img && \
+	virt-install \
+	  --name stack-horizon-centos \
+	  --vcpus 4 \
+	  --memory 2048 \
+	  --disk stack-horizon-centos.img,device=disk,bus=virtio,format=qcow2 \
+	  --disk horizon-centos.iso,device=cdrom \
+	  --os-type linux \
+	  --os-variant centos6.10 \
+	  --virt-type kvm \
+	  --graphics none \
+	  --network network=default,model=virtio \
+	  --import
+
 stack-horizon.img: bionic.img horizon.yaml
 	cloud-localds horizon.iso horizon.yaml && \
 	cp bionic-server-cloudimg-amd64.img stack-horizon.img && \
@@ -154,6 +170,10 @@ dev: stack-dev.img
 .PHONY: horizon
 horizon: stack-horizon.img
 	virsh start stack-horizon
+
+.PHONY: horizon-centos
+horizon-centos: stack-horizon-centos.img
+	virsh start stack-horizon-centos
 
 .PHONY: virt_network
 virt_network: virt-host-network.xml virt-overlay-network.xml

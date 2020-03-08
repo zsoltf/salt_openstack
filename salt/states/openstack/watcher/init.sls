@@ -78,11 +78,13 @@ openstack-watcher-dashboard:
   cmd.run:
     - name: |
         apt-get -qq install -y python3-pip
-        git clone -b stable/train https://opendev.org/openstack/watcher-dashboard
-        cd watcher-dashboard
-        pip3 install -r requirements.txt
-        pip3 install .
-        cp watcher_dashboard/local/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        #git clone -b stable/train https://opendev.org/openstack/watcher-dashboard
+        #cd watcher-dashboard
+        #pip3 install -r requirements.txt
+        #pip3 install .
+        #cp watcher_dashboard/local/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        pip3 install -q watcher-dashboard
+        cp /usr/local/lib/python3.6/dist-packages/watcher_dashboard/local/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
         service apache2 restart

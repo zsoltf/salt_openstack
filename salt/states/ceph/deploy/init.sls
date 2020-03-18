@@ -1,8 +1,9 @@
 {% set mon_nodes = salt['mine.get']('ceph:role:mon', 'test.ping', 'grain') | dictsort() %}
 {% set osd_nodes = salt['mine.get']('ceph:role:osd', 'test.ping', 'grain') | dictsort() %}
 
-{% set mons = mon_nodes|map('first')|join(' ') %}
-{% set osds = osd_nodes|map('first')|join(' ') %}
+# TODO: add beauty and elegance
+{% set mons = mon_nodes|map('first')|join(' ') ~ '.ceph' %}
+{% set osds = osd_nodes|map('first')|join(' ') ~ '.ceph' %}
 {% set all = mons + ' ' + osds %}
 
 {% set storage_network = salt['pillar.get']('ceph:storage_network') %}

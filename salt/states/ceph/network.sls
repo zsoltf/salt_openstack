@@ -6,7 +6,7 @@
 
 ceph-etc_hosts_{{ name }}:
   host.present:
-    - name: {{ name }}
+    - name: {{ name }}.ceph
     - ip: {{ ip }}
     - clean: True
 

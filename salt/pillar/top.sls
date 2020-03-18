@@ -7,7 +7,11 @@ base:
 
   'datacenter:*':
     - match: grain
-  {%- if salt['pillar.get']('openstack:enable_ceph') %}
-    - ceph
-  {%- endif %}
     - openstack
+    {%- if salt['grains.get']('openstack:enable_ceph') %}
+    - ceph
+    {%- endif %}
+
+  'kube:role':
+    - match: grain
+    - kubernetes

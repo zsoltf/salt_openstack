@@ -40,7 +40,7 @@ push-admin-pub-key:
 
 ceph-admin-known-host_{{ name }}:
   cmd.wait:
-    - name: ssh-keyscan -H {{ name }} >> ~/.ssh/known_hosts
+    - name: ssh-keyscan -H {{ name ~ '.ceph' }} >> ~/.ssh/known_hosts
     - runas: ceph-admin
     - watch:
         - cmd: generate-admin-key

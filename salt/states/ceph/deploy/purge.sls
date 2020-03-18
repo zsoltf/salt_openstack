@@ -7,7 +7,10 @@ ceph-deploy-purge:
         ceph-deploy purge {{ nodes }} && \
         ceph-deploy purgedata {{ nodes }} && \
         ceph-deploy forgetkeys && \
-        rm ceph.*
+        rm ceph.* && \
+        cd .. && \
+        rm -rf /home/ceph-admin/ceph && \
+        rm -rf /home/ceph-admin/.ssh/id_rsa*
     - onlyif: cat /home/ceph-admin/ceph/purge
     - cwd: /home/ceph-admin/ceph
     - runas: ceph-admin

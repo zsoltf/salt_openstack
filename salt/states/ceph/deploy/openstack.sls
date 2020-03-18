@@ -56,7 +56,7 @@ ceph-openstack-pg-autoscaler:
         sudo ceph balancer on
         sudo ceph mgr module enable pg_autoscaler
         {%- for name in openstack_pools %}
-        sudo ceph pool set {{ name }} pg_autoscale_mode on
+        sudo ceph osd pool set {{ name }} pg_autoscale_mode on
         {%- endfor %}
         sudo ceph balancer mode crush-compat
     - unless: sudo ceph mgr module ls | head -10 | grep pg_autoscaler

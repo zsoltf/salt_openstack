@@ -5,7 +5,6 @@ initial-preparation:
     - tgt_type: grain
     - sls:
       - openstack
-      - openstack.monitor.client
 
 initial-node-preparation:
   salt.state:
@@ -25,6 +24,15 @@ monitor-node:
     - tgt_type: grain
     - sls:
       - openstack.monitor.server
+      - openstack.monitor.client
+    - require:
+      - salt: initial-preparation
+
+monitor-clients:
+  salt.state:
+    - tgt: 'openstack:role'
+    - tgt_type: grain
+    - sls:
       - openstack.monitor.client
     - require:
       - salt: initial-preparation
@@ -97,20 +105,42 @@ control-plane:
       - openstack.nova.controller
       - openstack.neutron.controller
       - openstack.cinder.controller
+    - require:
+      - salt: create-sql-tables
+      - salt: memcache-data-node
+      - salt: mq-data-node
+
+control-plane-extended:
+  salt.state:
+    - tgt: 'openstack:role:controller'
+    - tgt_type: grain
+    - sls:
       - openstack.heat
       - openstack.barbican
       - openstack.designate
       - openstack.senlin
       - openstack.octavia
-      - openstack.vitrage
-      - openstack.karbor
-      - openstack.watcher
       - openstack.mistral
       - openstack.zun
     - require:
       - salt: create-sql-tables
       - salt: memcache-data-node
       - salt: mq-data-node
+      - salt: control-plane
+
+#control-plane-experimental:
+#  salt.state:
+#    - tgt: 'openstack:role:controller'
+#    - tgt_type: grain
+#    - sls:
+#      - openstack.vitrage
+#      - openstack.karbor
+#      - openstack.watcher
+#    - require:
+#      - salt: create-sql-tables
+#      - salt: memcache-data-node
+#      - salt: mq-data-node
+#      - salt: control-plane
 
 ##############
 # compute node
@@ -123,6 +153,7 @@ compute-node:
       - openstack.nova.compute
       - openstack.cinder.compute
       - openstack.neutron.compute
+      - openstack.zun.compute
     - require:
       - salt: control-plane
 
@@ -145,3 +176,13 @@ storage-node:
     - sls: openstack.cinder.storage
     - require:
       - salt: control-plane
+
+{% if salt['grains.get']('openstack:enable_ceph') %}
+storage-swift:
+  salt.state:
+    - tgt: 'openstack:role:controller'
+    - tgt_type: grain
+    - sls: openstack.swift
+    - require:
+      - salt: control-plane
+{% endif %}

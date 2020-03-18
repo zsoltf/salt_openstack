@@ -2,31 +2,13 @@
 
 openstack-mistral:
   pkg.installed:
-    - names:
-        - libffi-dev
-        - libssl-dev
-        - libxml2-dev
-        - libxslt1-dev
-        - libyaml-dev
-        - mistral-common
-        - python3-dev
-        - python3-pip
-        - python3-setuptools
-        - tox
+    - pkgs:
+        - mistral-api
+        - mistral-engine
+        - mistral-event-engine
+        - mistral-executor
+        - python3-mistral
         - python3-mistralclient
-
-openstack-mistral-install:
-  cmd.run:
-    - name: |
-        git clone https://opendev.org/openstack/mistral
-        cd mistral
-        tox -egenconfig
-        mkdir /etc/mistral
-        cp etc/mistral.conf.sample /etc/mistral/mistral.conf
-        pip3 install -r requirements.txt
-        python3 setup.py install
-    - onchanges:
-      - pkg: openstack-mistral
 
 #openstack-mistral-clear-comments:
 #  cmd.run:
@@ -100,111 +82,23 @@ opensatck-mistral-admin-openrc:
         export OS_IMAGE_API_VERSION=2
         export OS_VOLUME_API_VERSION=3
 
-openstack-mistral-api-service:
+{% for service in [
+  'mistral-api',
+  'mistral-engine',
+  'mistral-event-engine',
+  'mistral-executor'] %}
+openstack-mistral-service-{{ service }}:
   service.running:
-    - name: mistral-api
+    - name: {{ service }}
     - enable: True
-    - require:
-        - cmd: openstack-mistral-api-service
-  cmd.run:
-    - name: systemctl daemon-reload
-    - onchanges:
-        - file: openstack-mistral-api-service
-  file.managed:
-    - name: /etc/systemd/system/mistral-api.service
-    - contents: |
-        [Unit]
-        Description = Openstack Workflow Service API
-
-        [Service]
-        ExecStart = /usr/bin/mistral-server --server api --config-file /etc/mistral/mistral.conf
-        User = mistral
-
-        [Install]
-        WantedBy = multi-user.target
-
-
-openstack-mistral-engine-service:
-  service.running:
-    - name: mistral-engine
-    - enable: True
-    - require:
-        - cmd: openstack-mistral-engine-service
-  cmd.run:
-    - name: systemctl daemon-reload
-    - onchanges:
-        - file: openstack-mistral-engine-service
-  file.managed:
-    - name: /etc/systemd/system/mistral-engine.service
-    - contents: |
-        [Unit]
-        Description = Openstack Workflow Service Engine
-
-        [Service]
-        ExecStart = /usr/bin/mistral-server --server engine --config-file /etc/mistral/mistral.conf
-        User = mistral
-
-        [Install]
-        WantedBy = multi-user.target
-
-
-openstack-mistral-notifier-service:
-  service.running:
-    - name: mistral-notifier
-    - enable: True
-    - require:
-        - cmd: openstack-mistral-notifier-service
-  cmd.run:
-    - name: systemctl daemon-reload
-    - onchanges:
-        - file: openstack-mistral-notifier-service
-  file.managed:
-    - name: /etc/systemd/system/mistral-notifier.service
-    - contents: |
-        [Unit]
-        Description = Openstack Workflow Service Notifier
-
-        [Service]
-        ExecStart = /usr/bin/mistral-server --server notifier --config-file /etc/mistral/mistral.conf
-        User = mistral
-
-        [Install]
-        WantedBy = multi-user.target
-
-
-openstack-mistral-executor-service:
-  service.running:
-    - name: mistral-executor
-    - enable: True
-    - require:
-        - cmd: openstack-mistral-executor-service
-  cmd.run:
-    - name: systemctl daemon-reload
-    - onchanges:
-        - file: openstack-mistral-executor-service
-  file.managed:
-    - name: /etc/systemd/system/mistral-executor.service
-    - contents: |
-        [Unit]
-        Description = Openstack Workflow Service Executor
-
-        [Service]
-        ExecStart = /usr/bin/mistral-server --server executor --config-file /etc/mistral/mistral.conf
-        User = mistral
-
-        [Install]
-        WantedBy = multi-user.target
-
+{% endfor %}
 
 #TODO: horizon dashboards are bad, they should go somewhere else
 openstack-mistral-dashboard:
   cmd.run:
     - name: |
         apt-get -qq install -y python3-pip
-        git clone -b stable/train https://github.com/openstack/mistral-dashboard.git
-        cd mistral-dashboard
-        pip3 install -r requirements.txt
-        pip3 install .
+        pip3 install mistral-dashboard
         cp /usr/local/lib/python3.6/dist-packages/mistraldashboard/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force

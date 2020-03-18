@@ -2,7 +2,8 @@
 
 {% load_yaml as ntp_servers_map %}
 
-default: {{ controller_ip }}
+default:
+  - {{ controller_ip }}
 
 controller:
   - ntp.ubuntu.com

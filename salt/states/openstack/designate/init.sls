@@ -1,5 +1,6 @@
 {% from 'openstack/map.jinja' import database, mq, memcache, controller, passwords with context %}
-{% set domain = grains['dns']['domain']|default('stack') %}
+#TODO: domain is not showing up in salt
+{% set domain = salt['grains.get']('dns:search', ['stack'])|first %}
 
 openstack-designate:
   pkg.installed:

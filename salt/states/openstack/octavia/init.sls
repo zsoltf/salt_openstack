@@ -227,7 +227,7 @@ openstack-octavia-certs:
     - name: |
         git clone https://opendev.org/openstack/octavia.git
         cd octavia/bin/
-        source create_dual_intermediate_CA.sh
+        ./create_dual_intermediate_CA.sh
         mkdir -p /etc/octavia/certs/private
         chmod 755 /etc/octavia -R
         cp -p etc/octavia/certs/server_ca.cert.pem /etc/octavia/certs
@@ -246,7 +246,7 @@ openstack-octavia-build-image:
     - name: |
         apt-get -qq install -y python3-pip
         apt-get -qq install -y qemu-utils git kpartx debootstrap
-        git clone -b stable/train https://opendev.org/openstack/octavia.git
+        #git clone -b stable/train https://opendev.org/openstack/octavia.git
         cd octavia/diskimage-create
         pip3 install -r requirements.txt
         ./diskimage-create.sh

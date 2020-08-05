@@ -1,0 +1,27 @@
+{% for interface in interfaces %}
+interface {{ interface }}
+  speed forced 40gfull
+  channel-group {{ port_channel }} mode active
+{% endfor %}
+!
+interface Port-Channel{{ port_channel }}
+  switchport mode trunk
+  switchport trunk group m1peer
+!
+interface Vlan{{ vlan }}
+  no autostate
+  ip address {{ ip_address }}
+!
+vlan {{ vlan }}
+  trunk group m1peer
+!
+mlag configuration
+  domain-id {{ domain_id }}
+  heartbeat-interval 10000
+  local-interface Vlan{{ vlan }}
+  peer-address {{ peer_address }}
+  peer-link Port-Channel{{ port_channel }}
+!
+no spanning-tree vlan {{ vlan }}
+!
+spanning-tree mode mstp

@@ -1,0 +1,6 @@
+{%- for name, settings in settings.items() %}
+{{ name }}
+{%- if settings %}
+{{ settings|indent(2) }}
+{%- endif %}
+{%- endfor %}

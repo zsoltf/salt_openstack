@@ -25,7 +25,7 @@
 {% set admin_ip = admin_ip|first %}
 
 {% set ceph = salt['pillar.get']('openstack:enable_ceph') %}
-{% set ceph_secret_uuid = salt['pillar.get']('openstack:ceph_secret_uuid') %}
+{% set ceph_secret_uuid = salt['pillar.get']('openstack:passwords:ceph_secret_uuid') %}
 {% set ceph_admin = salt['mine.get']('ceph:role:admin', 'test.ping', 'grain') | default([]) %}
 {% if ceph_admin %}
   {% set ceph_admin = ceph_admin|first %}

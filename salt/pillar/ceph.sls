@@ -72,9 +72,53 @@ boneyard:
       - /dev/sdd
       - /dev/sdf
 
-openstack:
-  public_networks: '10.5.45.0/24,10.250.18.0/23'
-  storage_network: '10.5.45.0/24'
+sv:
+  public_networks: '10.5.48.0/23,10.131.5.0/24'
+  storage_network: '10.131.7.0/24'
+
+  osds:
+
+    sv-os1-cmp-1:
+      - /dev/sdc
+      - /dev/sdd
+      - /dev/sde
+      - /dev/sdf
+      - /dev/sdg
+      - /dev/sdh
+      - /dev/sdi
+      - /dev/sdj
+      - /dev/sdk
+      - /dev/sdl
+      - /dev/sdm
+      - /dev/sdn
+
+    sv-os1-cmp-2:
+      - /dev/sdb
+      - /dev/sdc
+      - /dev/sdd
+      - /dev/sde
+      - /dev/sdf
+      - /dev/sdg
+      - /dev/sdh
+      - /dev/sdi
+      - /dev/sdj
+      - /dev/sdk
+      - /dev/sdl
+      - /dev/sdm
+
+    sv-os1-cmp-3:
+      - /dev/sdb
+      - /dev/sdc
+      - /dev/sdd
+      - /dev/sde
+      - /dev/sdf
+      - /dev/sdg
+      - /dev/sdh
+      - /dev/sdi
+      - /dev/sdj
+      - /dev/sdk
+      - /dev/sdl
+      - /dev/sdm
 
 
 {% endload %}

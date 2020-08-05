@@ -99,7 +99,7 @@ openstack-mistral-dashboard:
     - name: |
         apt-get -qq install -y python3-pip
         pip3 install mistral-dashboard
-        cp /usr/local/lib/python3.6/dist-packages/mistraldashboard/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        cp /usr/local/lib/python3.8/dist-packages/mistraldashboard/enabled/_[1-9]*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
         DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
         service apache2 restart

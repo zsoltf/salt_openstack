@@ -80,6 +80,16 @@ openstack-nova-ceph-cinder-secrets:
     - require:
         - pkg: openstack-nova-ceph-packages
 
+
+openstack-nova-ceph-keyring-secrets:
+  file.managed:
+    - name: /etc/ceph/ceph.client.cinder.keyring
+    - source: salt://minionfs/{{ ceph_admin_path }}/ceph.client.cinder.keyring
+    - user: nova
+    - mode: '0640'
+    - require:
+        - pkg: openstack-nova-ceph-packages
+
 openstack-nova-ceph-secret-xml:
   cmd.run:
     - name: |

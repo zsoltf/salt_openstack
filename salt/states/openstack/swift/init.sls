@@ -4,8 +4,8 @@
   {% set ceph_rgw = ceph_rgw|first %}
   {% set ceph_rgw_url = 'http://' ~ ceph_rgw ~ ':80/swift' %}
 {% endif %}
-{% set swift_hash_prefix = salt['pillar.get']('openstack:swift_hash_prefix') %}
-{% set swift_hash_suffix = salt['pillar.get']('openstack:swift_hash_suffix') %}
+{% set swift_hash_prefix = salt['pillar.get']('openstack:passwords:swift_hash_prefix') %}
+{% set swift_hash_suffix = salt['pillar.get']('openstack:passwords:swift_hash_suffix') %}
 
 
 openstack-swift:

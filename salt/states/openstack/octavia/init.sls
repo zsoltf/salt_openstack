@@ -348,11 +348,12 @@ openstack-octavia-bootstrap-db:
 openstack-octavia-dashboard:
   cmd.run:
     - name: |
-        apt-get -qq install -y python3-pip
-        pip3 install -q octavia-dashboard
-        cp /usr/local/lib/python3.6/dist-packages/octavia_dashboard/enabled/_1*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
-        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
-        DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
+        apt install -y python3-octavia-dashboard
+        #apt-get -qq install -y python3-pip
+        #pip3 install -q octavia-dashboard
+        #cp /usr/local/lib/python3.6/dist-packages/octavia_dashboard/enabled/_1*.py /usr/share/openstack-dashboard/openstack_dashboard/local/enabled/
+        #DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py collectstatic --noinput
+        #DJANGO_SETTINGS_MODULE=openstack_dashboard.settings python3 /usr/share/openstack-dashboard/manage.py compress --force
         service apache2 restart
     - onchanges:
       - cmd: openstack-octavia-bootstrap-db

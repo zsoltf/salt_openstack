@@ -1,0 +1,398 @@
+heat_template_version: rocky
+
+description: Kubernetes Heat Template
+
+parameters:
+
+  ssh_key_name:
+    type: string
+    description: name of key pair for ssh
+    default: rootkey
+
+  salt_master:
+    type: string
+    description: name of salt server
+
+  flavor:
+    type: string
+    description: name of flavor for server
+    default: m1.medium
+
+  image:
+    type: string
+    description: name of image for server
+    default: bionic
+
+  availability_zone:
+    type: string
+    description: name of the availability zone
+    default: nova
+
+  public_network:
+    type: string
+    description: name of the public network
+    default: external
+
+  dns_server:
+    type: string
+
+  datacenter:
+    type: string
+    description: datacenter salt grain
+
+  kube_vip:
+    type: string
+    description: vip for kube lb
+
+  kube_internal_vip:
+    type: string
+    description: vip for kube lb in private network
+    default: "10.9.9.9"
+
+resources:
+
+  net:
+    type: OS::Neutron::Net
+
+  subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: net }
+      cidr: "10.9.9.0/24"
+      dns_nameservers:
+        - "10.9.9.2"
+        - { get_param: dns_server }
+      ip_version: 4
+
+  router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info: { network: { get_param: public_network } }
+
+  router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: router }
+      subnet: { get_resource: subnet }
+
+  kube-lb-https-secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 443
+          port_range_max: 443
+
+  kube-internal-https-secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 6443
+          port_range_max: 6443
+
+  etcd-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-etcd
+      policies: [ anti-affinity ]
+
+  etcd-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          availability_zone: { get_param: availability_zone }
+          scheduler_hints: { group: { get_resource: etcd-servergroup } }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-etcd-%index%
+          key_name: { get_param: ssh_key_name }
+          networks:
+            - network: { get_resource: net }
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yml }
+              params:
+                "$datacenter": { get_param: datacenter }
+                "$salt_master": { get_param: salt_master }
+                "$salt_cmd": "salt-call test.ping"
+                "$kube_role": etcd
+
+  master-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-master
+      policies: [anti-affinity]
+
+  master-group:
+    type: OS::Heat::ResourceGroup
+    depends_on:
+      - kube-internal-https-secgroup
+    properties:
+      count: 3
+      resource_def:
+        type: kubetest_master.yaml
+        properties:
+          availability_zone: { get_param: availability_zone }
+          group: { get_resource: master-servergroup }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-master-%index%
+          key_name: { get_param: ssh_key_name }
+          network: { get_resource: net }
+          subnet: {get_param: public_network}
+          security_group: {get_resource: kube-internal-https-secgroup}
+          pool_id: {get_resource: pool}
+          metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yml }
+              params:
+                "$datacenter": { get_param: datacenter }
+                "$salt_master": { get_param: salt_master }
+                "$salt_cmd": "salt-call test.ping"
+                "$kube_role": master
+
+  worker-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-worker
+      policies: [ anti-affinity ]
+
+  worker-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          availability_zone: { get_param: availability_zone }
+          scheduler_hints: { group: { get_resource: worker-servergroup } }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-worker-%index%
+          key_name: { get_param: ssh_key_name }
+          networks:
+            - network: { get_resource: net }
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yml }
+              params:
+                "$datacenter": { get_param: datacenter }
+                "$salt_master": { get_param: salt_master }
+                "$salt_cmd": "salt-call test.ping"
+                "$kube_role": worker
+
+  mine_update:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: mine_update
+      tasks:
+        - name: command
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-run state.orchestrate openstack.mine --out=quiet'
+          publish:
+            bootstrap: true
+          on_error:
+            - fail
+
+  bootstrap:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: kube_bootstrap
+      tasks:
+        - name: command
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-run state.orchestrate openstack.test --out=quiet'
+          publish:
+            bootstrap: true
+          on_error:
+            - fail
+
+  clean_salt:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: clean_salt
+      tasks:
+        - name: delete_keys
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-key -y -d kube*'
+          publish:
+            result: <% task().result.split("\n") %>
+          on_error:
+            - fail
+
+  external_resource:
+    type: OS::Mistral::ExternalResource
+    properties:
+      actions:
+         CREATE:
+           workflow: {get_resource: mine_update}
+         DELETE:
+           workflow: {get_resource: clean_salt}
+
+  lb:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      vip_subnet: {get_resource: subnet}
+      vip_address: {get_param: kube_internal_vip}
+  listener:
+    type: OS::Octavia::Listener
+    properties:
+      loadbalancer: {get_resource: lb}
+      protocol: TCP
+      protocol_port: 443
+  pool:
+    type: OS::Octavia::Pool
+    properties:
+      listener: {get_resource: listener}
+      lb_algorithm: ROUND_ROBIN
+      protocol: TCP
+      session_persistence:
+        type: SOURCE_IP
+  lb_monitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      pool: { get_resource: pool }
+      type: TCP
+      delay: 5
+      max_retries: 5
+      timeout: 5
+  # assign a floating ip address to the load balancer
+  # pool.
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: {get_param: public_network}
+      floating_ip_address: { get_param: kube_vip }
+      port_id: {get_attr: [lb, vip_port_id]}
+      value_specs:
+        description: 'kube float'
+        dns_domain: 'openstack.bayphoto.com.'
+        dns_name: 'kubernetes'
+
+  cluster-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: senlin
+      policies: [ anti-affinity ]
+
+  profile:
+    type: OS::Senlin::Profile
+    properties:
+      type: os.nova.server-1.0
+      properties:
+        availability_zone: { get_param: availability_zone }
+        flavor: {get_param: flavor}
+        image: {get_param: image}
+        key_name: {get_param: ssh_key_name}
+        scheduler_hints: { group: { get_resource: cluster-servergroup } }
+        networks:
+          - network: {get_resource: net}
+        user_data:
+          str_replace:
+            template: { get_file: kube-cloudinit.yml }
+            params:
+              "$datacenter": { get_param: datacenter }
+              "$salt_master": { get_param: salt_master }
+              "$salt_cmd": "salt-call state.sls kubeadm,kubeadm.worker"
+              "$kube_role": worker
+
+  cluster:
+    type: OS::Senlin::Cluster
+    depends_on:
+      - external_resource
+    properties:
+      desired_capacity: 0
+      profile: {get_resource: profile}
+
+  scale_in_policy:
+    type: OS::Senlin::Policy
+    properties:
+      type: senlin.policy.scaling-1.0
+      bindings:
+        - cluster: {get_resource: cluster}
+      properties:
+        event: CLUSTER_SCALE_IN
+        adjustment:
+          type: CHANGE_IN_CAPACITY
+          number: 1
+
+  scale_out_policy:
+    type: OS::Senlin::Policy
+    properties:
+      type: senlin.policy.scaling-1.0
+      bindings:
+        - cluster: {get_resource: cluster}
+      properties:
+        event: CLUSTER_SCALE_OUT
+        adjustment:
+          type: CHANGE_IN_CAPACITY
+          number: 1
+
+  receiver_scale_out:
+    type: OS::Senlin::Receiver
+    properties:
+      cluster: {get_resource: cluster}
+      action: CLUSTER_SCALE_OUT
+      type: webhook
+
+  receiver_scale_in:
+    type: OS::Senlin::Receiver
+    properties:
+      cluster: {get_resource: cluster}
+      action: CLUSTER_SCALE_IN
+      type: webhook
+
+outputs:
+  etcd:
+    description: Public IP of kube etcd group
+    value: { get_attr: [ etcd-group, first_address ] }
+  master:
+    description: Public IP of kube master group
+    value: { get_attr: [ master-group, first_address ] }
+  worker:
+    description: Public IP of kube worker group
+    value: { get_attr: [ worker-group, first_address ] }
+  pool_ip_address:
+    value: {get_attr: [lb, vip_address]}
+    description: The IP address of the load balancing pool
+  webhook_scale_out:
+    description: Webhook to scale out cluster.
+    value:
+      str_replace:
+        template: curl -X POST LINK
+        params:
+          LINK: {get_attr: [receiver_scale_out, channel, alarm_url]}
+  webhook_scale_in:
+    description: Webhook to scale in cluster.
+    value:
+      str_replace:
+        template: curl -X POST LINK
+        params:
+          LINK: {get_attr: [receiver_scale_in, channel, alarm_url]}

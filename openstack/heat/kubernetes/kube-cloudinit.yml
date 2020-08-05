@@ -1,0 +1,24 @@
+#cloud-config
+bootcmd:
+  - 'ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+  - 'systemctl mask swap.target'
+  - 'swapoff -a'
+apt:
+  primary:
+    - arches: [default]
+      uri: http://catboat.discdrive.bayphoto.com/ubuntu/
+salt_minion:
+  conf:
+    master: $salt_master
+  grains:
+    app: kubernetes
+    datacenter: $datacenter
+    kube:
+      role: $kube_role
+mounts:
+  - [ swap ]
+swap:
+  size: 0
+runcmd:
+  - salt-call grains.item kube
+  - $salt_cmd

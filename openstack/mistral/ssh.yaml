@@ -1,0 +1,64 @@
+---
+version: "2.0"
+
+name: ssh
+
+workflows:
+
+  command:
+    type: direct
+
+    input:
+      - host
+      - command
+
+    task-defaults:
+      on-error:
+       - send_error
+
+    description: |
+      Runs ssh commands
+
+    tasks:
+
+      command:
+        description: Runs SSH command as root
+        action: std.ssh
+        input:
+          host: <% $.host %>
+          username: root
+          private_key_filename: /var/lib/mistral/.ssh/id_rsa
+          cmd: '<% $.command %>'
+        publish:
+          result: <% task().result.split('\n') %>
+
+      send_error:
+        action: std.echo output="it failed"
+
+  unattended-upgrades:
+    type: direct
+
+    input:
+      - host
+
+    task-defaults:
+      on-error:
+       - send_error
+
+    description: |
+      Runs unattended upgrades
+
+    tasks:
+
+      unattended-upgrades:
+        action: std.ssh
+        input:
+          host: "<% $.host %>"
+          username: root
+          private_key_filename: /var/lib/mistral/.ssh/id_rsa
+          cmd: 'unattended-upgrade -d'
+        publish:
+          result: <% task().result.split('\n') %>
+
+      send_error:
+        action: std.echo output="it failed"

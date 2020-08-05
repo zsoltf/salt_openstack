@@ -1,0 +1,53 @@
+type: os.heat.stack
+version: 1.0
+properties:
+  name: elastic-stack
+  template: elastic-data.yaml
+  parameters:
+    availability_zone: nova
+    flavor: elastic-data
+    image: bionic
+    name: elastic-node
+    group: cc1a9414-1553-481e-bcf2-23885322ea1e
+    key_name: zsoltskey
+    network: 08e40e2f-051a-49ac-8e70-2c2dc1d9664e
+    subnet: e6556ea2-48ba-450a-9fc4-78ebc2e97d17
+    security_group: 438803dc-eb15-4a30-9f8b-115e1ddd8a1f
+    pool_id: aac9b690-1a27-4321-8f90-b0d97954eb13
+    metadata: {"metering.server_group": test}
+    volume_size: 500
+    user_data:
+      str_replace:
+        template:
+          #cloud-config
+          bootcmd:
+            - 'ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf'
+            - 'systemctl mask swap.target'
+            - 'swapoff -a'
+          apt:
+            primary:
+              - arches: [default]
+                uri: http://catboat.discdrive.bayphoto.com/ubuntu/
+          salt_minion:
+            conf:
+              master: $salt_master
+            grains:
+              app: elasticsearch
+              datacenter: $datacenter
+              elasticsearch:
+                role: $elastic_role
+          mounts:
+            - [ swap ]
+            - [ sdb, /data_elasticsearch ]
+          swap:
+            size: 0
+          runcmd:
+            - salt-call grains.items
+            - $salt_cmd
+        params:
+          "$datacenter": boneyard
+          "$salt_master": catboat.discdrive.bayphoto.com
+          "$salt_cmd": "salt-call test.ping"
+          "$elastic_role": data
+  context:
+    region_name: RegionOne

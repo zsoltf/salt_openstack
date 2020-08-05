@@ -1,0 +1,53 @@
+---
+version: "2.0"
+
+name: containers
+
+actions:
+
+  container:
+    description: Runs commands in a container
+    base: std.ssh
+    base-input:
+      host: frigate-2
+      username: root
+      private_key_filename: /var/lib/mistral/.ssh/id_rsa
+      cmd: >
+        openstack appcontainer run
+        -f yaml --wait --auto-remove --interactive
+        --net network=containers
+        --name mistral_<% execution().name %>
+        <% $.image %>
+        <% $.cmd %> | tail -n+3
+    input:
+      - cmd
+      - image
+    output: <% yaml_parse($) %>
+
+workflows:
+
+  run:
+    type: direct
+
+    input:
+      - image
+      - command
+
+    description: |
+      Runs a command in a container
+
+    tasks:
+
+      run_in_container:
+        description: Runs command in container
+        action: container
+        input:
+          cmd: <% $.command %>
+          image: <% $.image %>
+        publish:
+          result: <% task().result %>
+        on-error:
+        - send_error
+
+      send_error:
+        action: std.echo output="it failed"

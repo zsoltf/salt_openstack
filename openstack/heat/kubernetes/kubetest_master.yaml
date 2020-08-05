@@ -1,0 +1,70 @@
+heat_template_version: 2016-10-14
+description: A load-balancer server
+parameters:
+  name:
+    type: string
+    description: name of server
+  image:
+    type: string
+    description: Image used for servers
+  key_name:
+    type: string
+    description: SSH key to connect to the servers
+  flavor:
+    type: string
+    description: flavor used by the servers
+  pool_id:
+    type: string
+    description: Pool to contact
+  user_data:
+    type: string
+    description: Server user_data
+  metadata:
+    type: json
+  group:
+    type: string
+    description: Name of server group
+  network:
+    type: string
+    description: Network used by the server
+  subnet:
+    type: string
+    description: Subnet used by the server
+  security_group:
+    type: string
+    description: Security group used by the server
+  availability_zone:
+    type: string
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      availability_zone: { get_param: availability_zone }
+      name: {get_param: name}
+      flavor: {get_param: flavor}
+      image: {get_param: image}
+      key_name: {get_param: key_name}
+      metadata: {get_param: metadata}
+      user_data: {get_param: user_data}
+      user_data_format: RAW
+      networks: [{network: {get_param: network} }]
+      scheduler_hints: { group: {get_param: group }}
+      security_groups:
+        - default
+        - {get_param: security_group}
+  member:
+    type: OS::Octavia::PoolMember
+    properties:
+      pool: {get_param: pool_id}
+      address: {get_attr: [server, first_address]}
+      protocol_port: 6443
+      subnet: {get_param: subnet}
+
+outputs:
+  server_ip:
+    description: IP Address of the load-balanced server.
+    value: { get_attr: [server, first_address] }
+  lb_member:
+    description: LB member details.
+    value: { get_attr: [member, show] }

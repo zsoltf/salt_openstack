@@ -1,0 +1,75 @@
+---
+version: "2.0"
+
+name: salt_master
+
+actions:
+
+  salt:
+    description: Runs salt command on host over ssh
+    base: std.ssh
+    base-input:
+      host: <% $.host %>
+      username: root
+      private_key_filename: /var/lib/mistral/.ssh/id_rsa
+      cmd: 'salt -C "<% $.target %>" <% $.cmd %> --output yaml'
+    input:
+      - host
+      - cmd
+      - target
+    output: <% yaml_parse($) %>
+
+workflows:
+
+  commands:
+    type: direct
+
+    input:
+      - host
+      - target
+      - commands
+
+    task-defaults:
+      on-error:
+       - send_error
+
+    description: |
+      Runs a list of commands on a salt master
+
+    tasks:
+
+      salt_commands:
+        with-items: cmd in <% $.commands %>
+        description: Runs salt command on host
+        action: salt host=<% $.host %> cmd='<% $.cmd %>' target='<% $.target %>'
+        publish:
+          result: <% task().result %>
+
+      send_error:
+        action: std.echo output="it failed"
+
+  command:
+    type: direct
+
+    input:
+      - salt
+      - target
+      - command
+
+    task-defaults:
+      on-error:
+       - send_error
+
+    description: |
+      Runs a command on a salt master
+
+    tasks:
+
+      salt_command:
+        description: Runs salt command on host
+        action: salt host="<% $.salt %>" cmd="<% $.command %>" target="<% $.target %>"
+        publish:
+          result: <% task().result %>
+
+      send_error:
+        action: std.echo output="it failed"

@@ -1,0 +1,9 @@
+parameters:
+  availability_zone: frigate
+  datacenter: boneyard
+  dns_server: 10.5.48.8
+  public_network: boneyard
+  salt_master: catboat.discdrive.bayphoto.com
+  ssh_key_name: zsoltskey
+  kube_vip: "10.250.18.9"
+  kube_internal_vip: "10.9.9.9"

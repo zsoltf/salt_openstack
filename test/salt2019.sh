@@ -9,6 +9,7 @@ wget -O - https://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2/SALTSTACK-GPG
 echo 'deb http://repo.saltstack.com/py3/ubuntu/18.04/amd64/2019.2 bionic main' > /etc/apt/sources.list.d/saltstack.list
 mkdir -p /etc/salt/minion.d
 echo -e "master: ${SALT}\nlog_level: info" >> /etc/salt/minion.d/minion.conf
+ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 apt update
 apt install -y salt-minion
 salt-call test.ping

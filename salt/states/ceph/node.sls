@@ -6,8 +6,8 @@ ntpsec:
 openssh-server:
   pkg.installed: []
 
-python-minimal:
-  pkg.installed: []
+#python-minimal:
+#  pkg.installed: []
 
 ceph-admin-user:
   user.present:

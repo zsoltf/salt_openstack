@@ -1,5 +1,5 @@
 {% set passwords = salt['pillar.get']('openstack:passwords') %}
-{% set monitor = salt['mine.get']('openstack:role:monitor', 'test.ping', 'grain') | first %}
+{# set monitor = salt['mine.get']('openstack:role:monitor', 'test.ping', 'grain') | first #}
 {% set mon = salt['mine.get']('ceph:role:mon', 'test.ping', 'grain') | join(' ') %}
 
 ceph-cluster-mgr:

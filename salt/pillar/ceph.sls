@@ -1,7 +1,7 @@
 {% load_yaml as map %}
 
 base:
-  release: nautilus
+  release: octopus
   openstack:
     pools:
       - backups

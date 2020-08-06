@@ -3,7 +3,8 @@
 # Create OSDs
 
 {% for osd_node in osd_nodes %}
-  {% for disk in salt['pillar.get']('ceph:osds:' + osd_node) %}
+  {% set pillarname = osd_node.split('.')[0] %}
+  {% for disk in salt['pillar.get']('ceph:osds:' + pillarname) %}
 
 ceph-cluster-osd-{{ osd_node }}-create-osd-{{ disk }}:
   cmd.run:

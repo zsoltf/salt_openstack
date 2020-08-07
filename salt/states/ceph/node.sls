@@ -29,3 +29,24 @@ ceph-admin-ssh-auth:
     - source: salt://minionfs/{{ deploy_node }}/home/ceph-admin/.ssh/id_rsa.pub
     - require:
       - user: ceph-admin-user
+
+ceph-file-limits:
+  file.managed:
+    - name: /etc/security/limits.d/file.conf
+    - text: |
+        *	soft	nofile	1048576
+        *	hard	nofile	1048576
+        root	soft	nofile	1048576
+        root	hard	nofile	1048576
+
+ceph-file-limits-pam:
+  file.append:
+    - name: /etc/pam.d/common-session
+    - text: |
+        session required pam_limits.so
+
+ceph-file-limits-pam2:
+  file.append:
+    - name: /etc/pam.d/common-session-noninteractive
+    - text: |
+        session required pam_limits.so

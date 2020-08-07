@@ -58,12 +58,12 @@ sv:
   base:
     admin_network: 10.5.48.0/23
     overlay_network: 10.131.1.0/24
-    external_net_name: openstack
-    external_net_subnet: 10.5.38.0/24
-    external_net_gateway: 10.5.38.1
+    external_net_name: physical
+    external_net_subnet: 10.5.48.0/23
+    external_net_gateway: 10.5.48.1
     external_net_nameservers: 10.5.48.8
-    external_net_pool_start: 10.5.38.49
-    external_net_pool_end: 10.5.38.199
+    external_net_pool_start: 10.5.49.10
+    external_net_pool_end: 10.5.49.199
     enable_ceph: True
 
   sv-os1-ctr-1*:

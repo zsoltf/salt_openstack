@@ -18,24 +18,24 @@ initial-node-preparation:
 ##############
 # monitor node
 ##############
-monitor-node:
-  salt.state:
-    - tgt: 'openstack:role:monitor'
-    - tgt_type: grain
-    - sls:
-      - openstack.monitor.server
-      - openstack.monitor.client
-    - require:
-      - salt: initial-preparation
-
-monitor-clients:
-  salt.state:
-    - tgt: 'openstack:role'
-    - tgt_type: grain
-    - sls:
-      - openstack.monitor.client
-    - require:
-      - salt: initial-preparation
+#monitor-node:
+#  salt.state:
+#    - tgt: 'openstack:role:monitor'
+#    - tgt_type: grain
+#    - sls:
+#      - openstack.monitor.server
+#      - openstack.monitor.client
+#    - require:
+#      - salt: initial-preparation
+#
+#monitor-clients:
+#  salt.state:
+#    - tgt: 'openstack:role'
+#    - tgt_type: grain
+#    - sls:
+#      - openstack.monitor.client
+#    - require:
+#      - salt: initial-preparation
 
 ###########
 # data node

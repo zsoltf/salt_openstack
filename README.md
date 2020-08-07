@@ -32,3 +32,9 @@ salt sv-os1* mine.get \* storage_network
 salt-run state.orch ceph.orchestrate
 
 ```
+
+### setup openstack
+
+```
+salt-run state.orch openstack.orchestrate
+```

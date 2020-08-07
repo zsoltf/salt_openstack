@@ -3,6 +3,8 @@ ceph-config:
     - name: /etc/ceph/ceph.conf
     - sections:
         global:
+          public_network: {{ salt['pillar.get']('ceph:public_networks') }}
+          cluster_network: {{ salt['pillar.get']('ceph:cluster_network') }}
           mon_pg_warn_max_per_osd: 0
           mon_pg_warn_min_per_osd: 0
           auth_cluster_required: cephx

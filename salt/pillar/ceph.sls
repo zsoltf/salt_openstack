@@ -13,6 +13,7 @@ boneyard:
 
   public_networks: '10.130.5.0/24,10.250.18.0/23'
   storage_network: '10.130.5.0/24'
+  cluster_network: '10.130.7.0/24'
 
   osds:
 

@@ -76,7 +76,7 @@ boneyard:
 sv:
   public_networks: '10.5.48.0/23,10.131.5.0/24'
   storage_network: '10.131.5.0/24'
-  ceph_network: '10.131.7.0/24'
+  cluster_network: '10.131.7.0/24'
 
   osds:
 

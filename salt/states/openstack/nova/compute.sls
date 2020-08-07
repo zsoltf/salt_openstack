@@ -67,7 +67,6 @@ openstack-nova-compute-initial-config:
 openstack-nova-ceph-packages:
   pkg.installed:
     - names:
-        - python-minimal
         - ceph-common
         - python3-rbd
 

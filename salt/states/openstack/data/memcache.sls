@@ -6,7 +6,7 @@ openstack-memcache:
   pkg.installed:
     - names:
         - memcached
-        - python-memcache
+        - python3-memcache
 
   file.replace:
     - name: /etc/memcached.conf

@@ -6,7 +6,7 @@ openstack-mysql:
   pkg.installed:
     - names:
         - mysql-server
-        - python-pymysql
+        - python3-pymysql
 
   file.managed:
     - name: /etc/mysql/mysql.conf.d/openstack.cnf

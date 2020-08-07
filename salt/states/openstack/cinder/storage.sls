@@ -69,7 +69,6 @@ openstack-cinder-storage-config:
 openstack-cinder-volume-ceph-packages:
   pkg.installed:
     - names:
-        - python-minimal
         - ceph-common
         - python3-rbd
         - python3-rados

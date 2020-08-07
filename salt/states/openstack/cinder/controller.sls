@@ -10,7 +10,6 @@ include:
 openstack-cinder-ceph-packages:
   pkg.installed:
     - names:
-        - python-minimal
         - ceph-common
         - python3-rbd
         - python3-rados

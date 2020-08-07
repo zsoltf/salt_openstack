@@ -16,13 +16,13 @@ ceph-rgw-config:
           rgw_keystone_accepted_roles: admin
           rgw_keystone_token_cache_size: 0
           rgw_keystone_revocation_interval: 300
-          rgw_keystone_make_new_tenants: true
+          rgw_keystone_make_new_tenants: 'true'
           #rgw_s3_auth_use_keystone: true
-          rgw_s3_auth_use_keystone: false
+          rgw_s3_auth_use_keystone: 'false'
           #nss_db_path = {path to nss db}
-          rgw_keystone_verify_ssl: false
-          rgw_swift_account_in_url: true
-          rgw_keystone_implicit_tenants: true
+          rgw_keystone_verify_ssl: 'false'
+          rgw_swift_account_in_url: 'true'
+          rgw_keystone_implicit_tenants: 'true'
           #rgw_keystone_admin_token: 123
 
 ceph-rgw-service:

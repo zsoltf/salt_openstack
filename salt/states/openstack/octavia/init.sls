@@ -329,6 +329,7 @@ openstack-octavia-bootstrap-db:
     - name: |
         octavia-db-manage --config-file /etc/octavia/octavia.conf upgrade head
         systemctl restart octavia-api octavia-health-manager octavia-housekeeping octavia-worker octavia-interface
+        systemctl enable octavia-interface
     - env:
         OS_PROJECT_DOMAIN_NAME: Default
         OS_USER_DOMAIN_NAME: Default

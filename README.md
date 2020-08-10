@@ -36,5 +36,14 @@ salt-run state.orch ceph.orchestrate
 ### setup openstack
 
 ```
+# set up grains
+
+salt sv-os1-ctr-1* grains.append openstack:role '[controller,mq,sql,memcache,etcd]'
+salt sv-os1-ctr-2* grains.append openstack:role storage
+salt sv-os1-cmp-* grains.append openstack:role compute
+
+
+# orchestrate
+
 salt-run state.orch openstack.orchestrate
 ```

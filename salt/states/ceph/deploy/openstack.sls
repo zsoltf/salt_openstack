@@ -50,20 +50,6 @@ ceph-openstack-{{ name }}:
 {% endfor %}
 
 
-ceph-openstack-pg-autoscaler:
-  cmd.run:
-    - name: |
-        sudo ceph balancer on
-        sudo ceph mgr module enable pg_autoscaler
-        {%- for name in openstack_pools %}
-        sudo ceph osd pool set {{ name }} pg_autoscale_mode on
-        {%- endfor %}
-        sudo ceph balancer mode crush-compat
-    - unless: sudo ceph mgr module ls | head -10 | grep pg_autoscaler
-    - cwd: /home/ceph-admin/ceph
-    - runas: ceph-admin
-
-
 ceph-openstack-glance-auth:
   cmd.run:
     - name: |

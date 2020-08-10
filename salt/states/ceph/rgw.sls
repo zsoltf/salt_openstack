@@ -9,9 +9,9 @@ ceph-rgw-config:
           # Keystone information
           rgw_keystone_api_version: 3
           rgw_keystone_url: http://{{ controller }}:5000
-          rgw_keystone_admin_user: swift
-          rgw_keystone_admin_password: {{ passwords.swift_pass }}
-          rgw_keystone_admin_domain: default
+          rgw_keystone_admin_user: admin
+          rgw_keystone_admin_password: {{ passwords.admin_pass }}
+          rgw_keystone_admin_domain: Default
           rgw_keystone_admin_project: admin
           rgw_keystone_accepted_roles: admin
           rgw_keystone_token_cache_size: 0

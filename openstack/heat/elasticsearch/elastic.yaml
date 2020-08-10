@@ -380,7 +380,7 @@ resources:
       value_specs:
         description: 'elastic float'
         #dns_domain: 'openstack.example.com.'
-        dns_name: 'elasticsearch'
+        #dns_name: 'elasticsearch'
 
 outputs:
   master:

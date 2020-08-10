@@ -246,7 +246,7 @@ resources:
     properties:
       name: elastic-forwarder
       ram: 16384
-      vcpus: 24
+      vcpus: 16
       disk: 300
 
   forwarder-servergroup:

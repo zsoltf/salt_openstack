@@ -6,7 +6,7 @@ bootcmd:
 apt:
   primary:
     - arches: [default]
-      uri: http://catboat.discdrive.bayphoto.com/ubuntu/
+      uri: $ubuntu_mirror
 salt_minion:
   conf:
     master: $salt_master

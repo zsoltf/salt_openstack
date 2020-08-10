@@ -1,0 +1,13 @@
+parameters:
+  availability_zone: nova
+  datacenter: sv
+  public_network: physical
+  salt_master: salt.discdrive.bayphoto.com
+  ssh_key_name: zsoltskey
+  dns_nameservers: "10.8.8.2,10.5.48.8"
+  #ubuntu_mirror: http://catboat.discdrive.bayphoto.com/ubuntu/
+  vip: "10.5.49.99"
+  kibana_vip: "10.5.49.100"
+  internal_vip: "10.8.8.8"
+  internal_cidr: "10.8.8.8/24"
+  volume_size: 500

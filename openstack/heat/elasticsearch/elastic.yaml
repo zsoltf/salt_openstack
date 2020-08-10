@@ -32,6 +32,10 @@ parameters:
     type: string
     description: datacenter salt grain
 
+  dns_nameservers:
+    type: comma_delimited_list
+    description: list of dns nameservers
+
   vip:
     type: string
     description: vip for lb
@@ -52,6 +56,11 @@ parameters:
     type: number
     description: volume size for data node
 
+  ubuntu_mirror:
+    type: string
+    default: http://us.archive.ubuntu.com/ubuntu/
+    description: ubuntu mirror for cloud init
+
 resources:
 
   net:
@@ -62,9 +71,7 @@ resources:
     properties:
       network_id: { get_resource: net }
       cidr: { get_param: internal_cidr }
-      dns_nameservers:
-        - "10.8.8.2"
-        - "10.5.48.8"
+      dns_nameservers: { get_param: dns_nameservers }
       ip_version: 4
 
   router:
@@ -154,6 +161,7 @@ resources:
             str_replace:
               template: { get_file: elastic-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
@@ -190,6 +198,7 @@ resources:
             str_replace:
               template: { get_file: elastic-data-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
@@ -226,6 +235,7 @@ resources:
             str_replace:
               template: { get_file: elastic-data-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
@@ -273,6 +283,7 @@ resources:
             str_replace:
               template: { get_file: elastic-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call test.ping"
@@ -301,6 +312,7 @@ resources:
         str_replace:
           template: { get_file: elastic-cloudinit.yaml }
           params:
+            "$ubuntu_mirror": { get_param: ubuntu_mirror }
             "$datacenter": { get_param: datacenter }
             "$salt_master": { get_param: salt_master }
             "$salt_cmd": "salt-call state.sls elastic.kibana"
@@ -313,7 +325,7 @@ resources:
   #    floating_ip_address: { get_param: kibana_vip }
   #    value_specs:
   #      description: 'kibana float'
-  #      dns_domain: 'openstack.bayphoto.com.'
+  #      dns_domain: 'openstack.example.com.'
   #      dns_name: 'kibana'
 
   #kibana-ip-assoc:
@@ -367,7 +379,7 @@ resources:
       port_id: {get_attr: [lb, vip_port_id]}
       value_specs:
         description: 'elastic float'
-        dns_domain: 'openstack.bayphoto.com.'
+        #dns_domain: 'openstack.example.com.'
         dns_name: 'elasticsearch'
 
 outputs:

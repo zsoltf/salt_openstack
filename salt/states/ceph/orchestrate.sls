@@ -5,6 +5,7 @@ prepare-ceph-network:
     - sls:
         - ceph.network
 
+# TODO: ceph deploy has some issues, switch to cephadm
 install-ceph-deploy:
   salt.state:
     - tgt: 'ceph:role:deploy'

@@ -33,7 +33,7 @@ ceph-admin-ssh-auth:
 ceph-file-limits:
   file.managed:
     - name: /etc/security/limits.d/file.conf
-    - text: |
+    - contents: |
         *	soft	nofile	1048576
         *	hard	nofile	1048576
         root	soft	nofile	1048576

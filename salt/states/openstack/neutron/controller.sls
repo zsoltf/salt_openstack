@@ -69,6 +69,9 @@ openstack-neutron-initial-config:
           password: {{ passwords.nova_pass }}
         oslo_concurrency:
           lock_path: /var/lib/neutron/tmp
+        quotas:
+          quota_router: 50
+          quota_security_group: 50
 
 openstack-neutron-ml2-config:
   ini.options_present:

@@ -204,42 +204,42 @@ resources:
                 "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
                 "$elastic_role": data
 
-  node-servergroup:
-    type: OS::Nova::ServerGroup
-    properties:
-      name: elastic-node
-      policies: [soft-anti-affinity]
+  #node-servergroup:
+  #  type: OS::Nova::ServerGroup
+  #  properties:
+  #    name: elastic-node
+  #    policies: [soft-anti-affinity]
 
-  node-group:
-    type: OS::Heat::ResourceGroup
-    depends_on:
-      - internal-secgroup
-    properties:
-      count: 3
-      resource_def:
-        type: elastic-data.yaml
-        properties:
-          availability_zone: { get_param: availability_zone }
-          group: { get_resource: node-servergroup }
-          flavor: { get_resource: flavor }
-          image: { get_param: image }
-          name: elastic-node-%index%
-          key_name: { get_param: ssh_key_name }
-          network: { get_resource: net }
-          subnet: {get_resource: subnet}
-          security_group: {get_resource: internal-secgroup}
-          pool_id: {get_resource: pool}
-          metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
-          volume_size: {get_param: volume_size}
-          user_data:
-            str_replace:
-              template: { get_file: elastic-data-cloudinit.yaml }
-              params:
-                "$ubuntu_mirror": { get_param: ubuntu_mirror }
-                "$datacenter": { get_param: datacenter }
-                "$salt_master": { get_param: salt_master }
-                "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
-                "$elastic_role": data
+  #node-group:
+  #  type: OS::Heat::ResourceGroup
+  #  depends_on:
+  #    - internal-secgroup
+  #  properties:
+  #    count: 3
+  #    resource_def:
+  #      type: elastic-data.yaml
+  #      properties:
+  #        availability_zone: { get_param: availability_zone }
+  #        group: { get_resource: node-servergroup }
+  #        flavor: { get_resource: flavor }
+  #        image: { get_param: image }
+  #        name: elastic-node-%index%
+  #        key_name: { get_param: ssh_key_name }
+  #        network: { get_resource: net }
+  #        subnet: {get_resource: subnet}
+  #        security_group: {get_resource: internal-secgroup}
+  #        pool_id: {get_resource: pool}
+  #        metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
+  #        volume_size: {get_param: volume_size}
+  #        user_data:
+  #          str_replace:
+  #            template: { get_file: elastic-data-cloudinit.yaml }
+  #            params:
+  #              "$ubuntu_mirror": { get_param: ubuntu_mirror }
+  #              "$datacenter": { get_param: datacenter }
+  #              "$salt_master": { get_param: salt_master }
+  #              "$salt_cmd": "salt-call state.sls elastic.elasticsearch"
+  #              "$elastic_role": data
 
   forwarder-flavor:
     type: OS::Nova::Flavor
@@ -260,7 +260,7 @@ resources:
     depends_on:
       - master-group
       - data-group
-      - node-group
+      #- node-group
     properties:
       count: 2
       resource_def:

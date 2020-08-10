@@ -36,6 +36,8 @@ openstack-swift-config:
         chown -R swift:swift /etc/swift
         sed -i /^#/d /etc/swift/proxy-server.conf
         sed -i /^$/d /etc/swift/proxy-server.conf
+        # switclient horizon fix for ussuri
+        sed -iBAK '/def get_capabilities(self/,/return/{s|'/info'|/swift/info|}' /usr/lib/python3/dist-packages/swiftclient/client.py
     - onchanges:
       - pkg: openstack-swift
 

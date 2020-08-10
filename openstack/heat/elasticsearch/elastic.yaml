@@ -262,7 +262,7 @@ resources:
       - data-group
       #- node-group
     properties:
-      count: 2
+      count: 1
       resource_def:
         type: OS::Nova::Server
         properties:

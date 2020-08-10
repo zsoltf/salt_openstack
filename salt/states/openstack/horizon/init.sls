@@ -174,6 +174,13 @@ openstack-dashboard-config-10:
           ('light', 'Light', 'themes/light'),
         ]
         DEFAULT_THEME = 'light'
+        OPENSTACK_API_VERSIONS = {
+          "identity": 3,
+          "image": 2,
+          "volume": 3,
+        }
+        OPENSTACK_KEYSTONE_DEFAULT_DOMAIN = "Default"
+        OPENSTACK_KEYSTONE_DEFAULT_ROLE = "member"
 
 
 openstack-dashboard-config-11:

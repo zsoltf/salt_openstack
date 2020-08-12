@@ -1,6 +1,6 @@
 # sync salt to remote
 
-salt = catboat
+salt = salt.sol
 
 .PHONY: salt
 salt: test/master.conf

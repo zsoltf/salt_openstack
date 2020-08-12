@@ -47,7 +47,7 @@ resources:
         - boot_index: 0
           delete_on_termination: true
           image: { get_param: image }
-          volume_size: 40
+          volume_size: { get_param: volume_size }
       name: {get_param: name}
       flavor: {get_param: flavor}
       key_name: {get_param: key_name}
@@ -67,17 +67,17 @@ resources:
       protocol_port: 9200
       subnet: {get_param: subnet}
 
-  volume:
-    type: OS::Cinder::Volume
-    properties:
-      size: { get_param: volume_size }
-      description: Volume for stack
+  #volume:
+  #  type: OS::Cinder::Volume
+  #  properties:
+  #    size: { get_param: volume_size }
+  #    description: Volume for stack
 
-  volume_attachment:
-    type: OS::Cinder::VolumeAttachment
-    properties:
-      volume_id: { get_resource: volume }
-      instance_uuid: { get_resource: server }
+  #volume_attachment:
+  #  type: OS::Cinder::VolumeAttachment
+  #  properties:
+  #    volume_id: { get_resource: volume }
+  #    instance_uuid: { get_resource: server }
 
 outputs:
   server_ip:

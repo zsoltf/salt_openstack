@@ -10,4 +10,4 @@ parameters:
   kibana_vip: "10.5.49.100"
   internal_vip: "10.8.8.8"
   internal_cidr: "10.8.8.8/24"
-  volume_size: 500
+  volume_size: 200

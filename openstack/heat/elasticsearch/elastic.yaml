@@ -118,7 +118,7 @@ resources:
       name: elastic-data
       ram: 16384
       vcpus: 6
-      disk: 40
+      disk: 200
 
   master-flavor:
     type: OS::Nova::Flavor

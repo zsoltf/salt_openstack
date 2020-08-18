@@ -3,7 +3,7 @@ bootcmd:
   - 'ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf'
   - 'systemctl mask swap.target'
   - 'swapoff -a'
-  - 'mkfs.ext4 /dev/vdb'
+  #- 'mkfs.ext4 /dev/vdb'
 apt:
   primary:
     - arches: [default]
@@ -18,7 +18,7 @@ salt_minion:
       role: $elastic_role
 mounts:
   - [ swap ]
-  - [ /dev/vdb, /data_elasticsearch1 ]
+  #- [ /dev/vdb, /data_elasticsearch1 ]
 swap:
   size: 0
 runcmd:

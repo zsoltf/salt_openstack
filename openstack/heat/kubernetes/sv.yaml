@@ -1,0 +1,11 @@
+parameters:
+  availability_zone: nova
+  datacenter: sv
+  dns_nameservers: "10.9.9.2,10.5.48.8"
+  ubuntu_mirror: http://catboat.discdrive.bayphoto.com/ubuntu/
+  public_network: physical
+  salt_master: salt.discdrive.bayphoto.com
+  ssh_key_name: zsoltskey
+  kube_vip: "10.5.49.9"
+  kube_internal_vip: "10.9.9.9"
+  kube_internal_cidr: "10.9.9.9/24"

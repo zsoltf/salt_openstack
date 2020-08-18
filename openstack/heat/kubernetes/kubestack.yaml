@@ -33,9 +33,6 @@ parameters:
     description: name of the public network
     default: external
 
-  dns_server:
-    type: string
-
   datacenter:
     type: string
     description: datacenter salt grain
@@ -47,7 +44,19 @@ parameters:
   kube_internal_vip:
     type: string
     description: vip for kube lb in private network
-    default: "10.9.9.9"
+
+  kube_internal_cidr:
+    type: string
+    description: cidr for private network
+
+  ubuntu_mirror:
+    type: string
+    default: http://us.archive.ubuntu.com/ubuntu/
+    description: ubuntu mirror for cloud init
+
+  dns_nameservers:
+    type: comma_delimited_list
+    description: list of dns nameservers
 
 resources:
 
@@ -58,10 +67,8 @@ resources:
     type: OS::Neutron::Subnet
     properties:
       network_id: { get_resource: net }
-      cidr: "10.9.9.0/24"
-      dns_nameservers:
-        - "10.9.9.2"
-        - { get_param: dns_server }
+      cidr: { get_param: kube_internal_cidr }
+      dns_nameservers: { get_param: dns_nameservers }
       ip_version: 4
 
   router:
@@ -117,8 +124,9 @@ resources:
           user_data_format: RAW
           user_data:
             str_replace:
-              template: { get_file: kube-cloudinit.yml }
+              template: { get_file: kube-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call test.ping"
@@ -137,7 +145,7 @@ resources:
     properties:
       count: 3
       resource_def:
-        type: kubetest_master.yaml
+        type: kubestack_master.yaml
         properties:
           availability_zone: { get_param: availability_zone }
           group: { get_resource: master-servergroup }
@@ -152,8 +160,9 @@ resources:
           metadata: {"metering.server_group": {get_param: "OS::stack_id"}}
           user_data:
             str_replace:
-              template: { get_file: kube-cloudinit.yml }
+              template: { get_file: kube-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call test.ping"
@@ -183,78 +192,79 @@ resources:
           user_data_format: RAW
           user_data:
             str_replace:
-              template: { get_file: kube-cloudinit.yml }
+              template: { get_file: kube-cloudinit.yaml }
               params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
                 "$datacenter": { get_param: datacenter }
                 "$salt_master": { get_param: salt_master }
                 "$salt_cmd": "salt-call test.ping"
                 "$kube_role": worker
 
-  mine_update:
-    type: OS::Mistral::Workflow
-    properties:
-      type: direct
-      name: mine_update
-      tasks:
-        - name: command
-          action: std.ssh
-          description: Runs SSH command as root
-          input:
-            host: { get_param: salt_master }
-            username: root
-            private_key_filename: /var/lib/mistral/.ssh/id_rsa
-            cmd: 'salt-run state.orchestrate openstack.mine --out=quiet'
-          publish:
-            bootstrap: true
-          on_error:
-            - fail
+  #mine_update:
+  #  type: OS::Mistral::Workflow
+  #  properties:
+  #    type: direct
+  #    name: mine_update
+  #    tasks:
+  #      - name: command
+  #        action: std.ssh
+  #        description: Runs SSH command as root
+  #        input:
+  #          host: { get_param: salt_master }
+  #          username: root
+  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
+  #          cmd: 'salt-run state.orchestrate kubeadm.mine --out=quiet'
+  #        publish:
+  #          bootstrap: true
+  #        on_error:
+  #          - fail
 
-  bootstrap:
-    type: OS::Mistral::Workflow
-    properties:
-      type: direct
-      name: kube_bootstrap
-      tasks:
-        - name: command
-          action: std.ssh
-          description: Runs SSH command as root
-          input:
-            host: { get_param: salt_master }
-            username: root
-            private_key_filename: /var/lib/mistral/.ssh/id_rsa
-            cmd: 'salt-run state.orchestrate openstack.test --out=quiet'
-          publish:
-            bootstrap: true
-          on_error:
-            - fail
+  #bootstrap:
+  #  type: OS::Mistral::Workflow
+  #  properties:
+  #    type: direct
+  #    name: kube_bootstrap
+  #    tasks:
+  #      - name: command
+  #        action: std.ssh
+  #        description: Runs SSH command as root
+  #        input:
+  #          host: { get_param: salt_master }
+  #          username: root
+  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
+  #          cmd: 'salt-run state.orchestrate openstack.test --out=quiet'
+  #        publish:
+  #          bootstrap: true
+  #        on_error:
+  #          - fail
 
-  clean_salt:
-    type: OS::Mistral::Workflow
-    properties:
-      type: direct
-      name: clean_salt
-      tasks:
-        - name: delete_keys
-          action: std.ssh
-          description: Runs SSH command as root
-          input:
-            host: { get_param: salt_master }
-            username: root
-            private_key_filename: /var/lib/mistral/.ssh/id_rsa
-            cmd: 'salt-key -y -d kube*'
-          publish:
-            result: <% task().result.split("\n") %>
-          on_error:
-            - fail
+  #clean_salt:
+  #  type: OS::Mistral::Workflow
+  #  properties:
+  #    type: direct
+  #    name: clean_salt
+  #    tasks:
+  #      - name: delete_keys
+  #        action: std.ssh
+  #        description: Runs SSH command as root
+  #        input:
+  #          host: { get_param: salt_master }
+  #          username: root
+  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
+  #          cmd: 'salt-key -y -d kube*'
+  #        publish:
+  #          result: <% task().result.split("\n") %>
+  #        on_error:
+  #          - fail
 
-  external_resource:
-    type: OS::Mistral::ExternalResource
-    properties:
-      actions:
-         CREATE:
-           workflow: {get_resource: mine_update}
-         DELETE:
-           workflow: {get_resource: clean_salt}
+  #external_resource:
+  #  type: OS::Mistral::ExternalResource
+  #  properties:
+  #    actions:
+  #       CREATE:
+  #         workflow: {get_resource: mine_update}
+  #       DELETE:
+  #         workflow: {get_resource: clean_salt}
 
   lb:
     type: OS::Octavia::LoadBalancer
@@ -296,78 +306,79 @@ resources:
         dns_domain: 'openstack.bayphoto.com.'
         dns_name: 'kubernetes'
 
-  cluster-servergroup:
-    type: OS::Nova::ServerGroup
-    properties:
-      name: senlin
-      policies: [ anti-affinity ]
+  #cluster-servergroup:
+  #  type: OS::Nova::ServerGroup
+  #  properties:
+  #    name: senlin
+  #    policies: [ anti-affinity ]
 
-  profile:
-    type: OS::Senlin::Profile
-    properties:
-      type: os.nova.server-1.0
-      properties:
-        availability_zone: { get_param: availability_zone }
-        flavor: {get_param: flavor}
-        image: {get_param: image}
-        key_name: {get_param: ssh_key_name}
-        scheduler_hints: { group: { get_resource: cluster-servergroup } }
-        networks:
-          - network: {get_resource: net}
-        user_data:
-          str_replace:
-            template: { get_file: kube-cloudinit.yml }
-            params:
-              "$datacenter": { get_param: datacenter }
-              "$salt_master": { get_param: salt_master }
-              "$salt_cmd": "salt-call state.sls kubeadm,kubeadm.worker"
-              "$kube_role": worker
+  #profile:
+  #  type: OS::Senlin::Profile
+  #  properties:
+  #    type: os.nova.server-1.0
+  #    properties:
+  #      availability_zone: { get_param: availability_zone }
+  #      flavor: {get_param: flavor}
+  #      image: {get_param: image}
+  #      key_name: {get_param: ssh_key_name}
+  #      scheduler_hints: { group: { get_resource: cluster-servergroup } }
+  #      networks:
+  #        - network: {get_resource: net}
+  #      user_data:
+  #        str_replace:
+  #          template: { get_file: kube-cloudinit.yaml }
+  #          params:
+  #            "$ubuntu_mirror": { get_param: ubuntu_mirror }
+  #            "$datacenter": { get_param: datacenter }
+  #            "$salt_master": { get_param: salt_master }
+  #            "$salt_cmd": "salt-call state.sls kubeadm,kubeadm.worker"
+  #            "$kube_role": worker
 
-  cluster:
-    type: OS::Senlin::Cluster
-    depends_on:
-      - external_resource
-    properties:
-      desired_capacity: 0
-      profile: {get_resource: profile}
+  #cluster:
+  #  type: OS::Senlin::Cluster
+  #  depends_on:
+  #    - external_resource
+  #  properties:
+  #    desired_capacity: 0
+  #    profile: {get_resource: profile}
 
-  scale_in_policy:
-    type: OS::Senlin::Policy
-    properties:
-      type: senlin.policy.scaling-1.0
-      bindings:
-        - cluster: {get_resource: cluster}
-      properties:
-        event: CLUSTER_SCALE_IN
-        adjustment:
-          type: CHANGE_IN_CAPACITY
-          number: 1
+  #scale_in_policy:
+  #  type: OS::Senlin::Policy
+  #  properties:
+  #    type: senlin.policy.scaling-1.0
+  #    bindings:
+  #      - cluster: {get_resource: cluster}
+  #    properties:
+  #      event: CLUSTER_SCALE_IN
+  #      adjustment:
+  #        type: CHANGE_IN_CAPACITY
+  #        number: 1
 
-  scale_out_policy:
-    type: OS::Senlin::Policy
-    properties:
-      type: senlin.policy.scaling-1.0
-      bindings:
-        - cluster: {get_resource: cluster}
-      properties:
-        event: CLUSTER_SCALE_OUT
-        adjustment:
-          type: CHANGE_IN_CAPACITY
-          number: 1
+  #scale_out_policy:
+  #  type: OS::Senlin::Policy
+  #  properties:
+  #    type: senlin.policy.scaling-1.0
+  #    bindings:
+  #      - cluster: {get_resource: cluster}
+  #    properties:
+  #      event: CLUSTER_SCALE_OUT
+  #      adjustment:
+  #        type: CHANGE_IN_CAPACITY
+  #        number: 1
 
-  receiver_scale_out:
-    type: OS::Senlin::Receiver
-    properties:
-      cluster: {get_resource: cluster}
-      action: CLUSTER_SCALE_OUT
-      type: webhook
+  #receiver_scale_out:
+  #  type: OS::Senlin::Receiver
+  #  properties:
+  #    cluster: {get_resource: cluster}
+  #    action: CLUSTER_SCALE_OUT
+  #    type: webhook
 
-  receiver_scale_in:
-    type: OS::Senlin::Receiver
-    properties:
-      cluster: {get_resource: cluster}
-      action: CLUSTER_SCALE_IN
-      type: webhook
+  #receiver_scale_in:
+  #  type: OS::Senlin::Receiver
+  #  properties:
+  #    cluster: {get_resource: cluster}
+  #    action: CLUSTER_SCALE_IN
+  #    type: webhook
 
 outputs:
   etcd:
@@ -382,17 +393,17 @@ outputs:
   pool_ip_address:
     value: {get_attr: [lb, vip_address]}
     description: The IP address of the load balancing pool
-  webhook_scale_out:
-    description: Webhook to scale out cluster.
-    value:
-      str_replace:
-        template: curl -X POST LINK
-        params:
-          LINK: {get_attr: [receiver_scale_out, channel, alarm_url]}
-  webhook_scale_in:
-    description: Webhook to scale in cluster.
-    value:
-      str_replace:
-        template: curl -X POST LINK
-        params:
-          LINK: {get_attr: [receiver_scale_in, channel, alarm_url]}
+  #webhook_scale_out:
+  #  description: Webhook to scale out cluster.
+  #  value:
+  #    str_replace:
+  #      template: curl -X POST LINK
+  #      params:
+  #        LINK: {get_attr: [receiver_scale_out, channel, alarm_url]}
+  #webhook_scale_in:
+  #  description: Webhook to scale in cluster.
+  #  value:
+  #    str_replace:
+  #      template: curl -X POST LINK
+  #      params:
+  #        LINK: {get_attr: [receiver_scale_in, channel, alarm_url]}

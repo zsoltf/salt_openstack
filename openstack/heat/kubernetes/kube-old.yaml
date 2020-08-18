@@ -1,0 +1,188 @@
+heat_template_version: rocky
+
+description: Kubernetes Heat Template
+
+parameters:
+
+  ssh_key_name:
+    type: string
+    description: name of key pair for ssh
+    default: rootkey
+
+  salt_master:
+    type: string
+    description: name of salt server
+    default: salt
+
+  flavor:
+    type: string
+    description: name of flavor for server
+    default: m1.medium
+
+  image:
+    type: string
+    description: name of image for server
+    default: bionic
+
+  public_network:
+    type: string
+    description: name of the public network
+    default: public
+
+  kube_vip:
+    type: string
+    description: vip for kube lb
+
+  kube_internal_vip:
+    type: string
+    description: vip for kube lb in private network
+
+  kube_internal_cidr:
+    type: string
+    description: cidr for private network
+
+  ubuntu_mirror:
+    type: string
+    default: http://us.archive.ubuntu.com/ubuntu/
+    description: ubuntu mirror for cloud init
+
+  dns_nameservers:
+    type: comma_delimited_list
+    description: list of dns nameservers
+
+
+resources:
+
+  internal-net:
+    type: OS::Neutron::Net
+
+  kube-subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: internal-net }
+      cidr: { get_param: kube_internal_cidr }
+      dns_nameservers: { get_param: dns_nameservers }
+      ip_version: 4
+
+  kube-router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info: { network: { get_param: public_network } }
+
+  kube-router-interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: kube-router }
+      subnet: { get_resource: kube-subnet }
+
+  kube-lb-https-secgroup:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      rules:
+        - protocol: tcp
+          remote_ip_prefix: 0.0.0.0/0
+          port_range_min: 443
+          port_range_max: 443
+
+  kube-etcd-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-etcd
+      policies: [ anti-affinity ]
+
+  kube-etcd-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          scheduler_hints: { group: { get_resource: kube-etcd-servergroup } }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-etcd-%index%
+          key_name: { get_param: ssh_key_name }
+          networks:
+            - network: { get_resource: internal-net }
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yaml }
+              params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
+                "$salt_master": { get_param: salt_master }
+                "$kube_role": etcd
+
+
+  kube-master-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-master
+      policies: [anti-affinity]
+
+  kube-master-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          scheduler_hints: { group: { get_resource: kube-master-servergroup } }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-master-%index%
+          key_name: { get_param: ssh_key_name }
+          networks:
+            - network: { get_resource: internal-net }
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yaml }
+              params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
+                "$salt_master": { get_param: salt_master }
+                "$kube_role": master
+
+
+  kube-worker-servergroup:
+    type: OS::Nova::ServerGroup
+    properties:
+      name: kube-worker
+      policies: [anti-affinity]
+
+  kube-worker-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          scheduler_hints: { group: { get_resource: kube-worker-servergroup } }
+          flavor: { get_param: flavor }
+          image: { get_param: image }
+          name: kube-worker-%index%
+          key_name: { get_param: ssh_key_name }
+          networks:
+            - network: { get_resource: internal-net }
+          user_data_format: RAW
+          user_data:
+            str_replace:
+              template: { get_file: kube-cloudinit.yaml }
+              params:
+                "$ubuntu_mirror": { get_param: ubuntu_mirror }
+                "$salt_master": { get_param: salt_master }
+                "$kube_role": worker
+
+outputs:
+  #lb:
+  #  description: Public IP of kube lb group
+  #  value: { get_attr: [ kube-lb-1, first_address ] }
+  etcd:
+    description: Public IP of kube etcd group
+    value: { get_attr: [ kube-etcd-group, first_address ] }
+  master:
+    description: Public IP of kube master group
+    value: { get_attr: [ kube-master-group, first_address ] }
+  worker:
+    description: Public IP of kube worker group
+    value: { get_attr: [ kube-worker-group, first_address ] }

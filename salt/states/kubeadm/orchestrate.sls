@@ -1,3 +1,5 @@
+{% set domain = salt['grains.get']('datacenter', 'openstack') ~ '.internal' %}
+
 ### install etcd ###
 
 install-kubeadm-on-etcd:
@@ -30,24 +32,6 @@ deploy-etcd-configs:
     - require:
         - salt: generate-etcd-certs
 
-### install load balancer ###
-
-install-lb-keepalived:
-  salt.state:
-    - tgt: 'kube:role:lb'
-    - tgt_type: grain
-    - sls:
-        - kubeadm.lb.keepalived
-
-install-lb-haproxy:
-  salt.state:
-    - tgt: 'kube:role:lb'
-    - tgt_type: grain
-    - sls:
-        - kubeadm.lb.haproxy
-    - require:
-      - salt: install-lb-keepalived
-
 ### install control plane ###
 
 install-kubeadm-on-control-plane:
@@ -64,6 +48,7 @@ bootstrap-first-control-plane:
     - sls: kubeadm.master.bootstrap
     - require:
         - salt: install-kubeadm-on-control-plane
+        - salt: generate-etcd-certs
 
 join-control-planes:
   salt.state:

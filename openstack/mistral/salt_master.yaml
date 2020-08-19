@@ -52,7 +52,6 @@ workflows:
     type: direct
 
     input:
-      - salt
       - target
       - command
 
@@ -67,7 +66,11 @@ workflows:
 
       salt_command:
         description: Runs salt command on host
-        action: salt host="<% $.salt %>" cmd="<% $.command %>" target="<% $.target %>"
+        action: salt
+        input:
+          host: salt
+          cmd: "<% $.command %>"
+          target: "<% $.target %>"
         publish:
           result: <% task().result %>
 

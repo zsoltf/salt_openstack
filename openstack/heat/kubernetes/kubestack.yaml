@@ -200,71 +200,71 @@ resources:
                 "$salt_cmd": "salt-call test.ping"
                 "$kube_role": worker
 
-  #mine_update:
-  #  type: OS::Mistral::Workflow
-  #  properties:
-  #    type: direct
-  #    name: mine_update
-  #    tasks:
-  #      - name: command
-  #        action: std.ssh
-  #        description: Runs SSH command as root
-  #        input:
-  #          host: { get_param: salt_master }
-  #          username: root
-  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
-  #          cmd: 'salt-run state.orchestrate kubeadm.mine --out=quiet'
-  #        publish:
-  #          bootstrap: true
-  #        on_error:
-  #          - fail
+  mine_update:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: mine_update
+      tasks:
+        - name: command
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-run state.orchestrate kubeadm.mine --out=quiet'
+          publish:
+            bootstrap: true
+          on_error:
+            - fail
 
-  #bootstrap:
-  #  type: OS::Mistral::Workflow
-  #  properties:
-  #    type: direct
-  #    name: kube_bootstrap
-  #    tasks:
-  #      - name: command
-  #        action: std.ssh
-  #        description: Runs SSH command as root
-  #        input:
-  #          host: { get_param: salt_master }
-  #          username: root
-  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
-  #          cmd: 'salt-run state.orchestrate openstack.test --out=quiet'
-  #        publish:
-  #          bootstrap: true
-  #        on_error:
-  #          - fail
+  bootstrap:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: kube_bootstrap
+      tasks:
+        - name: command
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-run state.orchestrate kubeadm.orchestrate --out=quiet'
+          publish:
+            bootstrap: true
+          on_error:
+            - fail
 
-  #clean_salt:
-  #  type: OS::Mistral::Workflow
-  #  properties:
-  #    type: direct
-  #    name: clean_salt
-  #    tasks:
-  #      - name: delete_keys
-  #        action: std.ssh
-  #        description: Runs SSH command as root
-  #        input:
-  #          host: { get_param: salt_master }
-  #          username: root
-  #          private_key_filename: /var/lib/mistral/.ssh/id_rsa
-  #          cmd: 'salt-key -y -d kube*'
-  #        publish:
-  #          result: <% task().result.split("\n") %>
-  #        on_error:
-  #          - fail
+  clean_salt:
+    type: OS::Mistral::Workflow
+    properties:
+      type: direct
+      name: clean_salt
+      tasks:
+        - name: delete_keys
+          action: std.ssh
+          description: Runs SSH command as root
+          input:
+            host: { get_param: salt_master }
+            username: root
+            private_key_filename: /var/lib/mistral/.ssh/id_rsa
+            cmd: 'salt-key -y -d kube*'
+          publish:
+            result: <% task().result.split("\n") %>
+          on_error:
+            - fail
 
-  #external_resource:
-  #  type: OS::Mistral::ExternalResource
-  #  properties:
-  #    actions:
-  #       CREATE:
-  #         workflow: {get_resource: mine_update}
-  #       DELETE:
-  #         workflow: {get_resource: clean_salt}
+  external_resource:
+    type: OS::Mistral::ExternalResource
+    properties:
+      actions:
+         CREATE:
+           workflow: {get_resource: mine_update}
+         DELETE:
+           workflow: {get_resource: clean_salt}
 
   lb:
     type: OS::Octavia::LoadBalancer

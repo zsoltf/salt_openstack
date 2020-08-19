@@ -261,10 +261,10 @@ resources:
     type: OS::Mistral::ExternalResource
     properties:
       actions:
-         CREATE:
-           workflow: {get_resource: mine_update}
          DELETE:
            workflow: {get_resource: clean_salt}
+         #CREATE:
+         #  workflow: {get_resource: mine_update}
 
   lb:
     type: OS::Octavia::LoadBalancer

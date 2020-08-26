@@ -26,6 +26,10 @@ openstack-heat-initial-config:
           stack_domain_admin: heat_domain_admin
           stack_domain_admin_password: {{ passwords.heat_admin_pass }}
           stack_user_domain_name: heat
+          # dont use cfn
+          default_software_config_transport: POLL_TEMP_URL
+          default_deployment_signal_transport: TEMP_URL_SIGNAL
+          default_user_data_format: SOFTWARE_CONFIG
         database:
           connection: 'mysql+pymysql://heat:{{ passwords.heat_db_pass }}@{{ database }}/heat'
         keystone_authtoken:

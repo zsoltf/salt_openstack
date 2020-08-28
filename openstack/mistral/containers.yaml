@@ -1,28 +1,28 @@
 ---
 version: "2.0"
 
-name: containers
+name: container_run
 
 actions:
 
-  container:
+  runc:
     description: Runs commands in a container
     base: std.ssh
     base-input:
-      host: frigate-2
+      host: <% $.host %>
       username: root
       private_key_filename: /var/lib/mistral/.ssh/id_rsa
       cmd: >
-        openstack appcontainer run
-        -f yaml --wait --auto-remove --interactive
-        --net network=containers
-        --name mistral_<% execution().name %>
+        docker run -i --rm -e RAILS_ENV=${RAILS_ENV}
+        -e SEMANTIC_LOGGER_APP=dp2registry-worker
+        -v /nasserver:/nasserver
         <% $.image %>
-        <% $.cmd %> | tail -n+3
+        <% $.cmd %>
     input:
+      - host
       - cmd
       - image
-    output: <% yaml_parse($) %>
+    output: <% $.split("\n") %>
 
 workflows:
 
@@ -30,7 +30,8 @@ workflows:
     type: direct
 
     input:
-      - image
+      - host
+      - image: 'ubuntu:20.04'
       - command
 
     description: |
@@ -40,8 +41,9 @@ workflows:
 
       run_in_container:
         description: Runs command in container
-        action: container
+        action: runc
         input:
+          host: <% $.host %>
           cmd: <% $.command %>
           image: <% $.image %>
         publish:

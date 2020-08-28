@@ -74,8 +74,8 @@ boneyard:
       - /dev/sdf
 
 sv:
-  public_networks: '10.131.5.0/24'
-  storage_network: '10.131.5.0/24'
+  public_networks: '10.5.38.0/24,10.0.0.0/8'
+  storage_network: '10.5.38.0/24'
   cluster_network: '10.131.7.0/24'
 
   osds:

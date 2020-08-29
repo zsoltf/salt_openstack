@@ -40,7 +40,7 @@ kubeadm-master-config:
         clusterName: "boneyard"
         apiServer:
           extraArgs:
-            service-cluster-ip-range: "10.96.0.0/16"
+            service-cluster-ip-range: "10.2.0.0/17"
           certSANs:
           - {{ apiserver_fqdn }}
         etcd:
@@ -53,8 +53,8 @@ kubeadm-master-config:
                 certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
                 keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
         networking:
-          podSubnet: "10.244.0.0/16"
-          #serviceSubnet: "10.9.11.0/24"
+          podSubnet: "10.1.0.0/16"
+          serviceSubnet: "10.2.0.0/17"
           #dnsDomain: "boneyard.local"
 
 

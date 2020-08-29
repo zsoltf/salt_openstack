@@ -16,6 +16,10 @@ boneyard:
   apiserver: 10.250.18.9
   apiserver_fqdn: kubernetes.openstack.bayphoto.com
 
+sv:
+  apiserver: 10.5.49.9
+  apiserver_fqdn: kubernetes.openstack.bayphoto.com
+
 {% endload %}
 {% set kube = salt['grains.filter_by'](map, grain='datacenter', base='base') %}
 

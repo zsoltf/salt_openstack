@@ -43,25 +43,25 @@ openstack-kuryr-kubernetes-initial-config:
           username: kuryr
           password: {{ passwords.kuryr_pass }}
 
-#openstack-kuryr-kubernetes-service:
-#  service.running:
-#    - name: kuryr-k8s-controller
-#    - enable: True
-#    - require:
-#        - cmd: openstack-kuryr-kubernetes-service
-#  cmd.run:
-#    - name: systemctl daemon-reload
-#    - onchanges:
-#        - file: openstack-kuryr-kubernetes-service
-#  file.managed:
-#    - name: /etc/systemd/system/kuryr-k8s-controller.service
-#    - contents: |
-#        [Unit]
-#        Description = Kuryr-Kubernetes
-#
-#        [Service]
-#        ExecStart = /usr/local/bin/kuryr-k8s-controller --config-file /etc/kuryr/kuryr.conf
-#        CapabilityBoundingSet = CAP_NET_ADMIN
-#
-#        [Install]
-#        WantedBy = multi-user.target
+openstack-kuryr-kubernetes-service:
+  service.running:
+    - name: kuryr-k8s-controller
+    - enable: True
+    - require:
+        - cmd: openstack-kuryr-kubernetes-service
+  cmd.run:
+    - name: systemctl daemon-reload
+    - onchanges:
+        - file: openstack-kuryr-kubernetes-service
+  file.managed:
+    - name: /etc/systemd/system/kuryr-k8s-controller.service
+    - contents: |
+        [Unit]
+        Description = Kuryr-Kubernetes
+
+        [Service]
+        ExecStart = /usr/local/bin/kuryr-k8s-controller --config-file /etc/kuryr/kuryr.conf
+        CapabilityBoundingSet = CAP_NET_ADMIN
+
+        [Install]
+        WantedBy = multi-user.target

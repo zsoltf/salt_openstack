@@ -70,6 +70,6 @@ kubeadm-etcd-generate-server-certs-{{ name }}:
 {% endfor %}
 
 kubeadm-etcd-push-certs-to-master:
-  module.wait:
+  module.run:
     - name: cp.push_dir
     - path: /deploy

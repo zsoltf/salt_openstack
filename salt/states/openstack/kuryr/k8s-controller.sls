@@ -24,6 +24,7 @@ openstack-kuryr-kubernetes-components:
     - onchanges:
         - cmd: openstack-kuryr-kubernetes-user
 
+#TODO: remove hardcoded data
 openstack-kuryr-kubernetes-initial-config:
   ini.options_present:
     - name: /etc/kuryr/kuryr.conf
@@ -32,6 +33,13 @@ openstack-kuryr-kubernetes-initial-config:
           bindir: /usr/local/libexec/kuryr
           #capability_scope: global
           #process_external_connectivity: 'False'
+        kubernetes:
+          api_root: https://10.5.49.9
+          ssl_client_crt_file: /data/certs/k8s-client.crt
+          ssl_client_key_file: /data/certs/k8s-client.key
+          ssl_ca_crt_file: /data/certs/k8s-ca.crt
+          #vif_pool_driver
+          #pod_vif_driver
         neutron:
           www_authenticate_uri: http://{{ controller }}:5000
           auth_url: http://{{ controller }}:5000
@@ -42,6 +50,14 @@ openstack-kuryr-kubernetes-initial-config:
           project_name: service
           username: kuryr
           password: {{ passwords.kuryr_pass }}
+        neutron_defaults:
+          #ovs_bridge: br-int
+          service_subnet: cc7bf243-4a30-4eaf-83d2-d67ab5a5371f
+          pod_security_groups: 2b5d2742-ff77-430c-999e-7dd87b8c3d0a
+          pod_subnet: cd404754-39ca-49c1-9751-c3fb98c881e4
+          project: 8125285e80cf40f3814035b709de4e9e
+          external_svc_net: 929cb5bd-7d0c-4e43-80bb-0b8a9aecffac
+
 
 openstack-kuryr-kubernetes-service:
   service.running:

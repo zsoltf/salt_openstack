@@ -17,8 +17,7 @@ boneyard:
   apiserver_fqdn: kubernetes.openstack.bayphoto.com
 
 sv:
-  apiserver: 10.5.48.104
-  #apiserver: 10.5.49.9
+  apiserver: 10.5.46.169
   apiserver_fqdn: kubernetes.openstack.bayphoto.com
 
 {% endload %}
